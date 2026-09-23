@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: "*/10 * * * *"  # every 10 minutes (GitHub may run a few minutes late)
   workflow_dispatch: {}     # "Run workflow" button for an instant update
+  repository_dispatch:      # "hey update the tracker" (Claude, via API)
+    types: [update-tracker]
 
 concurrency:
   group: film-tracker-sync
