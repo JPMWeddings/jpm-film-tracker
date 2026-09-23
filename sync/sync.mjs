@@ -32,7 +32,8 @@ const PACKAGES = {
     ['Raw footage film', 'The unedited footage of your day', 'Raw Footage Delivered', 'raw', 1],
   ],
 };
-PACKAGES['Custom'] = [PACKAGES['The Feature'][0], PACKAGES['The Feature'][3], PACKAGES['The Feature'][4]];
+const CEREMONY = PACKAGES['The Short Film'][1];
+PACKAGES['Custom'] =[PACKAGES['The Feature'][0], PACKAGES['The Feature'][3], PACKAGES['The Feature'][4]];
 
 // ---------- helpers ----------
 const todayCT = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(new Date());
@@ -103,17 +104,23 @@ async function buildCouple(w) {
   const stageDates = [null, d('Edit Started'), d('Sent to Color'), d('Color Back'), d('Sent to Matt'), d('Approved Date'), stage === 6 ? delivered : null];
 
   const filmLink = (d('Episode Delivered') || wStage === 'Delivered' || wStage === 'Complete') ? httpsOnly(p.url(W['Client Film Link'])) : null;
-  const rawLink = d('Raw Footage Delivered') ? httpsOnly(p.url(W['Raw Footage Link'])) : null;
-  // Ceremony and reels live in Dropbox Server Backup (VidFlow credits cost). Each has its own link field.
+  // Ceremony, raw footage and reels live in Dropbox Server Backup (VidFlow credits cost), each with its own link field.
+  // Justin, 2026-09-23: these snippets show the moment their link is in Notion, at any stage, to build excitement.
+  const rawLink = httpsOnly(p.url(W['Raw Footage Link']));
   const ceremonyLink = httpsOnly(p.url(W['Ceremony Film Link']));
   const reelsLink = httpsOnly(p.url(W['Reels Link']));
+  const earlyLinks = { raw: rawLink, ceremony: ceremonyLink, reels: reelsLink };
 
   const pkg = p.select(W['Package']) || 'The Feature';
   const reelState = p.select(B['Social Drop']);
-  const deliverables = (PACKAGES[pkg] || PACKAGES['The Feature']).map(([name, desc, field, kind, at]) => {
+  const items = [...(PACKAGES[pkg] || PACKAGES['The Feature'])];
+  // A ceremony file for a package without a ceremony card still gets one.
+  if (ceremonyLink && !items.some(i => i[3] === 'ceremony')) items.splice(1, 0, CEREMONY);
+  const deliverables = items.map(([name, desc, field, kind, at]) => {
     const date = d(field);
     let status;
-    if (kind === 'reels') status = (date || reelState === 'Sent to couple') ? 'ready' : (reelState === 'SemMedia making' || reelState === 'Matt review') ? 'work' : 'soon';
+    if (earlyLinks[kind]) status = 'ready';
+    else if (kind === 'reels') status = (date || reelState === 'Sent to couple') ? 'ready' : (reelState === 'SemMedia making' || reelState === 'Matt review') ? 'work' : 'soon';
     else status = date || (stage === 6 && (kind === 'film' || kind === 'ceremony')) ? 'ready' : (stage >= at ? 'work' : 'soon');
     const links = { film: filmLink, raw: rawLink, ceremony: ceremonyLink || filmLink, reels: reelsLink };
     const link = status === 'ready' ? links[kind] || null : null;
