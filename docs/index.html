@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#08090b">
+<title>Your Film | JPM Weddings</title>
+<link rel="icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,500;0,600;1,500&family=Lato:wght@300;400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<!-- Optional: add your Adobe Fonts (Typekit) stylesheet link here to use Orpheus Pro, exactly like jpmweddings.com. -->
+<style>
+:root{
+  color-scheme: dark;
+  --ink:#08090b; --surface:#111317; --raise:#171a20; --line:#252a33;
+  --text:#f3f4f6; --muted:#98a1ad; --faint:#5d6571;
+  --play:#2f6bea; --play-hi:#4f86f2; --navy:#25395a;
+  --good:#b9f3d8; --good-bg:#0f2a21; --good-line:#1e5a44;
+  --display:"orpheus-pro","Cormorant",Georgia,"Times New Roman",serif;
+  --body:"Lato","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--ink)}
+body{color:var(--text);font-family:var(--body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom,0px)}
+a{color:var(--play-hi)}
+[hidden]{display:none!important}
+button,input{font:inherit}
+:focus-visible{outline:2px solid var(--play-hi);outline-offset:3px}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:20px}
+
+/* Branded default cover (used until a couple adds a photo) */
+.cover{position:absolute;inset:0;background:
+  radial-gradient(circle at 72% 38%,rgba(255,196,120,.55) 0 2.5%,transparent 3.2%),
+  radial-gradient(circle at 81% 24%,rgba(79,134,242,.55) 0 4%,transparent 5%),
+  radial-gradient(circle at 64% 22%,rgba(255,236,200,.35) 0 1.8%,transparent 2.6%),
+  radial-gradient(circle at 88% 58%,rgba(255,170,110,.35) 0 5%,transparent 6.5%),
+  radial-gradient(circle at 58% 62%,rgba(120,150,255,.28) 0 3%,transparent 4%),
+  radial-gradient(circle at 93% 12%,rgba(255,220,170,.4) 0 2%,transparent 2.8%),
+  radial-gradient(ellipse at 78% 40%,#2a3553 0%,#141a2a 45%,#08090b 80%);
+  filter:blur(1px)}
+.cover.photo{filter:none;background-size:cover;background-position:50% 30%}
+
+/* Demo bar (only shows in demo mode) */
+.demo{position:sticky;top:0;z-index:30;background:#0d1a33;border-bottom:1px solid #1d3566;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:13px}
+.demo b{font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:#9dbbff}
+.demo .chips{display:flex;flex-wrap:wrap;gap:6px}
+.demo button{font-size:12px;color:#cfdcff;background:transparent;border:1px solid #2a4a8a;border-radius:999px;padding:4px 10px;cursor:pointer}
+.demo button[aria-pressed="true"]{background:var(--play);border-color:var(--play);color:#fff}
+
+/* Sign in */
+.signin{position:relative;min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:40px 20px;overflow:hidden}
+.signin::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,9,11,.9),rgba(8,9,11,.55))}
+.panel{position:relative;z-index:1;width:100%;max-width:440px;background:rgba(17,19,23,.86);border:1px solid var(--line);border-radius:18px;padding:32px 28px;backdrop-filter:blur(8px);display:grid;gap:16px}
+.panel img{width:96px}
+.panel h1{font-family:var(--display);font-weight:500;font-size:40px;line-height:1.05;margin:4px 0 0}
+.panel p{margin:0;color:#c9ced6}
+.panel label{font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.04em}
+.panel input{width:100%;background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:13px 14px;color:var(--text);font-size:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--play);color:#fff;border:0;border-radius:10px;padding:13px 18px;font-weight:700;cursor:pointer;text-decoration:none}
+.btn:hover{background:var(--play-hi)}
+.btn[disabled]{opacity:.6;cursor:default}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+.msg{font-size:14px;border-radius:10px;padding:12px 14px;background:var(--raise);border:1px solid var(--line)}
+.msg.ok{background:var(--good-bg);border-color:var(--good-line);color:var(--good)}
+.fine{font-size:12px;color:var(--faint)}
+
+/* Hero */
+.hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line);min-height:clamp(480px,74vh,740px);display:flex}
+.hero::after{content:"";position:absolute;inset:0;pointer-events:none;background:
+  linear-gradient(90deg,rgba(8,9,11,.9) 0%,rgba(8,9,11,.6) 38%,rgba(8,9,11,.05) 70%),
+  linear-gradient(0deg,rgba(8,9,11,1) 0%,rgba(8,9,11,0) 38%),
+  linear-gradient(180deg,rgba(8,9,11,.55) 0%,rgba(8,9,11,0) 22%)}
+.hero .inner{position:relative;z-index:2;width:100%;display:flex;flex-direction:column;justify-content:space-between;gap:48px;padding-block:28px 48px}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand img{width:92px;height:auto;display:block}
+.brand span{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#c9ced6}
+.hero-copy{max-width:600px}
+.eyebrow{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--play-hi);font-weight:700}
+.hero h1{font-family:var(--display);font-weight:500;font-size:clamp(46px,8.5vw,92px);line-height:.98;margin:10px 0 14px;letter-spacing:-.01em;text-wrap:balance}
+.hero h1 em{font-style:italic;color:#dfe6f3}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;color:#d5dae1;font-size:14px}
+.meta span+span::before{content:"";display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--faint);margin-right:18px;vertical-align:middle}
+.now{margin-top:22px;display:inline-flex;align-items:center;gap:10px;background:rgba(17,19,23,.8);border:1px solid var(--line);border-radius:999px;padding:8px 16px 8px 12px;font-size:14px;backdrop-filter:blur(6px)}
+.now .dot{width:9px;height:9px;border-radius:50%;background:var(--play-hi);animation:pulse 2.2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(79,134,242,.55)}70%{box-shadow:0 0 0 10px rgba(79,134,242,0)}100%{box-shadow:0 0 0 0 rgba(79,134,242,0)}}
+
+/* Add-your-photo circle */
+.photo-btn{position:absolute;z-index:3;right:max(24px,9vw);top:50%;transform:translateY(-50%);display:grid;justify-items:center;gap:10px;background:none;border:0;color:var(--text);cursor:pointer;padding:0}
+.photo-btn .ring{width:108px;height:108px;border-radius:50%;display:grid;place-items:center;background:rgba(8,9,11,.55);border:2px dashed rgba(159,187,255,.75);backdrop-filter:blur(4px);transition:transform .25s ease,border-color .25s ease,background .25s ease}
+.photo-btn:hover .ring{transform:scale(1.05);border-color:#fff;background:rgba(47,107,234,.35)}
+.photo-btn svg{width:34px;height:34px}
+.photo-btn .cap{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;text-shadow:0 1px 8px rgba(0,0,0,.8)}
+.photo-btn.small{top:auto;bottom:24px;transform:none;grid-auto-flow:column;gap:8px;align-items:center}
+.photo-btn.small .ring{width:40px;height:40px;border-width:1px}
+.photo-btn.small svg{width:18px;height:18px}
+.photo-btn.small .cap{font-size:11px}
+.photo-btn[aria-busy="true"] .ring{animation:spin 1.2s linear infinite;border-style:dotted}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Sections */
+section{padding-block:44px}
+.label{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 18px}
+h2{font-family:var(--display);font-weight:500;font-size:clamp(28px,4vw,38px);line-height:1.1;margin:0 0 8px;text-wrap:balance}
+
+/* Scrubber timeline */
+.track{position:relative;height:6px;border-radius:3px;background:var(--line);margin:60px 0 0}
+.fill{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,var(--navy),var(--play));transition:width .9s cubic-bezier(.2,.7,.2,1)}
+.head{position:absolute;top:50%;width:0;height:0;border-top:13px solid transparent;border-bottom:13px solid transparent;border-left:22px solid var(--play-hi);transform:translate(-4px,-50%);transition:left .9s cubic-bezier(.2,.7,.2,1);filter:drop-shadow(0 0 10px rgba(47,107,234,.6))}
+.tc{position:absolute;bottom:22px;transform:translateX(-50%);font-family:var(--mono);font-size:11px;color:var(--play-hi);white-space:nowrap;transition:left .9s cubic-bezier(.2,.7,.2,1)}
+.chapters{list-style:none;padding:0;margin:18px 0 0;display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+.chapters li{border-top:2px solid var(--line);padding-top:10px;font-size:13px;line-height:1.35;color:var(--faint)}
+.chapters .n,.chapters .d{display:block;font-family:var(--mono);font-size:11px}
+.chapters .n{margin-bottom:4px}.chapters .d{margin-top:4px}
+.chapters li.done{color:#cfd5de;border-color:var(--navy)}
+.chapters li.done .d{color:var(--muted)}
+.chapters li.cur{color:var(--text);border-color:var(--play-hi)}
+.chapters li.cur .n{color:var(--play-hi)}
+
+/* Current stage */
+.stage{display:grid;grid-template-columns:1.3fr 1fr;gap:28px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:26px}
+.card.feature{background:linear-gradient(160deg,#121a2b 0%,var(--surface) 60%);border-color:#22365d}
+.card p{margin:0;color:#c9ced6}
+.card .when{margin-top:16px;font-size:13px;color:var(--muted)}
+.ctas{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.facts{display:grid;gap:14px;margin:0}
+.facts div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px}
+.facts div:last-child{border-bottom:0;padding-bottom:0}
+.facts dt{color:var(--muted);font-size:14px}
+.facts dd{margin:0;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.note{font-size:12px;color:var(--faint);margin-top:14px}
+
+/* Deliverables */
+.deliv{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:22px}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:10px;align-content:start}
+.item h3{margin:0;font-size:16px;font-weight:700}
+.item p{margin:0;font-size:14px;color:var(--muted)}
+.item a{font-size:14px;font-weight:700;text-decoration:none}
+.pill{justify-self:start;font-size:12px;font-weight:700;letter-spacing:.04em;border-radius:999px;padding:3px 10px;border:1px solid var(--line);color:var(--muted)}
+.pill.ready{color:var(--good);border-color:var(--good-line);background:var(--good-bg)}
+.pill.work{color:#cfe0ff;border-color:#2a4a8a;background:#0f1d38}
+
+/* Contact + footer */
+.help{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between}
+.help p{margin:0;color:#c9ced6;max-width:560px}
+.addr{display:flex;gap:8px;align-items:center;background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:8px 8px 8px 14px;font-family:var(--mono);font-size:14px}
+.addr span{user-select:all}
+.copy{font-size:13px;font-weight:700;color:#fff;background:var(--play);border:0;border-radius:8px;padding:7px 12px;cursor:pointer}
+footer{border-top:1px solid var(--line);padding-block:28px 40px;color:var(--faint);font-size:13px;display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;align-items:center}
+footer em{font-family:var(--display);font-size:18px;color:var(--muted)}
+.linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;padding:0;font-size:13px}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:10px 16px;font-size:14px;max-width:calc(100% - 32px)}
+
+@media (max-width:760px){
+  .stage{grid-template-columns:1fr}
+  .deliv{grid-template-columns:1fr 1fr}
+  .chapters{grid-template-columns:1fr;gap:0}
+  .chapters li{border-top:0;border-left:2px solid var(--line);padding:6px 0 10px 14px}
+  .chapters li.done{border-color:var(--navy)}
+  .chapters li.cur{border-color:var(--play-hi)}
+  .tc{display:none}
+  .track{margin-top:30px}
+  .photo-btn{top:92px;transform:none;right:20px}
+  .photo-btn .ring{width:76px;height:76px}
+  .photo-btn svg{width:26px;height:26px}
+  .photo-btn .cap{font-size:11px}
+  .photo-btn.small{top:auto;bottom:20px}
+}
+@media (max-width:440px){.deliv{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="demo" id="demoBar" hidden>
+  <b>Demo</b><span>Preview each stage:</span>
+  <div class="chips" id="chips"></div>
+</div>
+
+<!-- Sign in -->
+<div class="signin" id="signinView" hidden>
+  <div class="cover" aria-hidden="true"></div>
+  <form class="panel" id="signinForm" novalidate>
+    <img src="assets/logo.png" alt="JPM Weddings">
+    <h1>Your Film Tracker</h1>
+    <p id="signinIntro">Enter the email you used when you booked with us. We will send you a one-time sign-in link. No password needed.</p>
+    <label for="emailIn">Email</label>
+    <input id="emailIn" type="email" autocomplete="email" inputmode="email" required placeholder="you@example.com">
+    <button class="btn" id="sendBtn" type="submit">Email me my link</button>
+    <div class="msg" id="signinMsg" role="status" hidden></div>
+    <button class="linkbtn" id="signoutAlt" type="button" hidden>Sign out</button>
+    <p class="fine">Private to you. Your link works once and expires after one hour.</p>
+  </form>
+</div>
+
+<!-- Tracker -->
+<div id="appView" hidden>
+  <header class="hero">
+    <div class="cover" id="cover" role="img" aria-label="Cover image"></div>
+    <button class="photo-btn" id="photoBtn" type="button" aria-label="Add your photo">
+      <span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.6"/></svg></span>
+      <span class="cap" id="photoCap">Add your photo</span>
+    </button>
+    <input id="photoIn" type="file" accept="image/*" hidden>
+    <div class="wrap inner">
+      <div class="brand"><img src="assets/logo.png" alt="JPM Weddings"><span>Your film tracker</span></div>
+      <div class="hero-copy">
+        <div class="eyebrow" id="collection"></div>
+        <h1 id="names"></h1>
+        <div class="meta" id="meta"></div>
+        <div class="now" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="nowText"></span></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section aria-labelledby="journey">
+      <p class="label">Your film's journey</p>
+      <h2 id="journey">From wedding day to premiere</h2>
+      <div class="track" aria-hidden="true"><div class="fill" id="fill"></div><div class="head" id="head"></div><div class="tc" id="tc"></div></div>
+      <ol class="chapters" id="chapters"></ol>
+    </section>
+
+    <section class="stage" aria-labelledby="stageName">
+      <div class="card feature">
+        <p class="label" style="margin-bottom:10px">What is happening now</p>
+        <h2 id="stageName"></h2>
+        <p id="stageText"></p>
+        <div class="ctas" id="ctas"></div>
+        <p class="when" id="stageWhen"></p>
+      </div>
+      <div class="card">
+        <dl class="facts" id="facts"></dl>
+        <p class="note">Every film is edited by hand, so timing can shift a little. We will always keep you posted.</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="dl">
+      <p class="label">Your deliverables</p>
+      <h2 id="dl">Everything in your collection</h2>
+      <div class="deliv" id="deliv"></div>
+    </section>
+
+    <section>
+      <div class="card help">
+        <p><strong>Questions about your film?</strong> Grecel, your Client Journey Manager, is here for you.</p>
+        <div class="addr"><span id="mail"></span><button class="copy" id="copyBtn" type="button">Copy</button></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <em>Your Wedding. Filmed Like Reality TV.</em>
+    <span>JPM Weddings · San Antonio, Texas</span>
+    <button class="linkbtn" id="signoutBtn" type="button">Sign out</button>
+  </footer>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+const C = window.JPM_CONFIG || {};
+const DEMO = !C.supabaseUrl || C.supabaseUrl.indexOf('YOUR') === 0 || location.hash === '#demo';
+const sb = (!DEMO && window.supabase) ? window.supabase.createClient(C.supabaseUrl, C.supabaseAnonKey) : null;
+const CONTACT = C.contactEmail || 'Grecel@jpmweddings.com';
+const $ = id => document.getElementById(id);
+
+const STAGES = [
+  {n:'Footage secured', t:'Every camera card and audio file from your day is safely backed up in two places. Nothing gets lost.'},
+  {n:'Crafting your story', t:'Our team is organizing hours of footage, syncing every angle and pulling your confessionals so your story is ready to build.'},
+  {n:'Editing your film', t:'Justin is in the edit bay shaping your episode: the arc of your day, the confessionals, the moments you did not even see happen.'},
+  {n:'Color grading', t:'Your film is with our colorist, getting the cinematic look that makes it feel like a show you would binge.'},
+  {n:'Sound and music', t:'Mixing every mic, the vows and the speeches so every word lands, then scoring it with music that fits you.'},
+  {n:'Final quality review', t:'Our lead filmmaker watches your film start to finish, frame by frame, before it ever reaches you.'},
+  {n:'Delivered', t:'Your film is ready. Grab your favorite people, press play, and relive it all.'}
+];
+const PRE = {n:'Counting down to your wedding', t:'We are getting ready for your big day. Once it is filmed, this page will follow your film through every step until it premieres.'};
+
+const DEMO_COUPLE = {id:'demo', names:'Ava & Marcus', collection:'The Feature', wedding_date:'2026-08-22', venue:'Hotel Emma, San Antonio',
+  stage_index:2, stage_dates:['2026-08-24','2026-09-14','2026-09-22',null,null,null,null], delivery_window:'Jan to Feb 2027', last_update:'2026-09-22',
+  film_link:'https://vidflow.co', raw_link:'https://www.dropbox.com'};
+
+function esc(s){return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function pad(n){return String(n).padStart(2,'0');}
+function fmt(iso, withYear){ if(!iso) return ''; const d = new Date(iso.slice(0,10)+'T12:00:00'); return d.toLocaleDateString('en-US', withYear===false ? {month:'short',day:'numeric'} : {month:'short',day:'numeric',year:'numeric'}); }
+function safeUrl(u){ return typeof u === 'string' && /^https:\/\//i.test(u) ? u : null; }
+function toast(t){ const el=$('toast'); el.textContent=t; el.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>el.hidden=true, 4200); }
+function show(view){ $('signinView').hidden = view!=='signin'; $('appView').hidden = view!=='app'; }
+
+function demoDeliverables(i, c){
+  const list = [
+    {name:'Wedding film episode', desc:'Your 15 to 30 minute reality style episode', at:2, link:c.film_link},
+    {name:'Trailer', desc:'A teaser cut of your story', at:2},
+    {name:'Documentary archive', desc:'The extended cut of your weekend', at:2},
+    {name:'Ceremony film', desc:'Your full ceremony, start to finish', at:1},
+    {name:'Raw footage film', desc:'The unedited footage of your day', at:1, link:c.raw_link},
+    {name:'Social Drop reels', desc:'Short reels made for sharing', at:0, status:'ready', date:'2026-09-03'}
+  ];
+  return list.map(d => {
+    if (d.status) return d;
+    const status = i === 6 ? 'ready' : (i >= d.at ? 'work' : 'soon');
+    return Object.assign({}, d, {status, date: i === 6 ? c.stage_dates[6] : null, link: i === 6 ? d.link : null});
+  });
+}
+
+function render(c){
+  const i = c.stage_index;
+  const parts = String(c.names||'').split(/\s*[&+]\s*|\s+and\s+/i);
+  $('names').innerHTML = parts.length === 2 ? esc(parts[0])+' <em>&amp;</em> '+esc(parts[1]) : esc(c.names);
+  $('collection').textContent = c.collection || 'Your wedding film';
+  const past = c.wedding_date && new Date(c.wedding_date+'T23:59:00') < new Date();
+  $('meta').innerHTML = (c.wedding_date ? '<span>'+(past?'Filmed ':'')+esc(fmt(c.wedding_date))+'</span>' : '') + (c.venue ? '<span>'+esc(c.venue)+'</span>' : '');
+
+  const stage = i < 0 ? PRE : STAGES[Math.min(i,6)];
+  if (i < 0) {
+    const days = c.wedding_date ? Math.max(0, Math.ceil((new Date(c.wedding_date+'T12:00:00') - new Date())/86400000)) : null;
+    $('nowText').innerHTML = days != null ? 'Your wedding is in <strong>'+days+' day'+(days===1?'':'s')+'</strong>' : '<strong>Getting ready for your wedding</strong>';
+  } else {
+    $('nowText').innerHTML = (i===6 ? '' : 'Now: ') + '<strong>'+esc(stage.n)+'</strong>';
+  }
+
+  const dates = c.stage_dates || [];
+  $('chapters').innerHTML = STAGES.map((s,k) => {
+    const cls = k < i ? 'done' : (k === i ? 'cur' : '');
+    const d = k < i ? (dates[k] ? 'Done '+fmt(dates[k],false) : 'Done') : (k === i ? (k===6 ? (dates[6] ? fmt(dates[6],false) : 'Ready') : 'In progress') : 'Up next');
+    return '<li class="'+cls+'"><span class="n">'+pad(k+1)+'</span>'+esc(s.n)+'<span class="d">'+d+'</span></li>';
+  }).join('');
+  const pct = i < 0 ? 0 : (i >= 6 ? 100 : ((i + 0.5) / 7) * 100);
+  $('fill').style.width = pct+'%'; $('head').style.left = pct+'%';
+  const tc = $('tc'); tc.style.left = pct+'%';
+  const secs = Math.round(pct/100*24*60); tc.textContent = '00:'+pad(Math.floor(secs/60))+':'+pad(secs%60)+':'+pad(Math.max(i,0)*7%24);
+
+  $('stageName').textContent = stage.n;
+  $('stageText').textContent = stage.t;
+  const film = safeUrl(c.film_link), raw = safeUrl(c.raw_link);
+  $('ctas').innerHTML = (i >= 6 && film ? '<a class="btn" href="'+esc(film)+'" target="_blank" rel="noopener">Watch your film</a>' : '') +
+                        (raw ? '<a class="btn ghost" href="'+esc(raw)+'" target="_blank" rel="noopener">Download raw footage</a>' : '');
+  $('stageWhen').textContent = i >= 6 ? 'Your links stay here whenever you want to come back.' : 'This page updates on its own as your film moves forward.';
+
+  let facts = [['Collection', c.collection || '']];
+  if (c.wedding_date) facts.push(['Wedding date', fmt(c.wedding_date)]);
+  if (c.last_update) facts.push(['Last update', fmt(c.last_update)]);
+  if (c.delivery_window && i < 6) facts.push(['Estimated delivery', c.delivery_window]);
+  $('facts').innerHTML = facts.filter(f => f[1]).map(f => '<div><dt>'+esc(f[0])+'</dt><dd>'+esc(f[1])+'</dd></div>').join('');
+
+  const deliv = c.id === 'demo' ? demoDeliverables(i, c) : (c.deliverables || []);
+  $('deliv').innerHTML = deliv.map(d => {
+    const label = d.status === 'ready' ? (d.date ? 'Delivered '+fmt(d.date,false) : 'Delivered') : d.status === 'work' ? 'In progress' : 'Coming soon';
+    const cls = d.status === 'ready' ? 'ready' : d.status === 'work' ? 'work' : '';
+    const link = d.status === 'ready' && safeUrl(d.link) ? '<a href="'+esc(d.link)+'" target="_blank" rel="noopener">Open</a>' : '';
+    return '<div class="item"><h3>'+esc(d.name)+'</h3><p>'+esc(d.desc||'')+'</p><span class="pill '+cls+'">'+label+'</span>'+link+'</div>';
+  }).join('');
+}
+
+/* Cover photo */
+let current = null;
+function setCover(url){ const el=$('cover'); el.style.backgroundImage='url("'+url+'")'; el.classList.add('photo'); $('photoBtn').classList.add('small'); $('photoCap').textContent='Change photo'; $('photoBtn').setAttribute('aria-label','Change your photo'); }
+async function loadCover(){
+  if (!sb || !current) return;
+  const {data} = await sb.storage.from('covers').createSignedUrl(current.id+'/cover.jpg', 3600);
+  if (data && data.signedUrl) { const probe = new Image(); probe.onload = () => setCover(data.signedUrl); probe.src = data.signedUrl; }
+}
+function shrink(file){
+  return new Promise((resolve, reject) => {
+    const img = new Image(); const url = URL.createObjectURL(file);
+    img.onload = () => { const max=2000, s=Math.min(1, max/Math.max(img.width,img.height));
+      const cv=document.createElement('canvas'); cv.width=Math.round(img.width*s); cv.height=Math.round(img.height*s);
+      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height); URL.revokeObjectURL(url);
+      cv.toBlob(b => b ? resolve(b) : reject(new Error('resize')), 'image/jpeg', 0.86); };
+    img.onerror = () => reject(new Error('read')); img.src = url;
+  });
+}
+$('photoBtn').addEventListener('click', () => $('photoIn').click());
+$('photoIn').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0]; e.target.value=''; if (!f) return;
+  if (!/^image\//.test(f.type)) { toast('Please choose a photo.'); return; }
+  const btn=$('photoBtn'); btn.setAttribute('aria-busy','true');
+  try {
+    const blob = await shrink(f);
+    if (sb && current) {
+      const {error} = await sb.storage.from('covers').upload(current.id+'/cover.jpg', blob, {upsert:true, contentType:'image/jpeg', cacheControl:'60'});
+      if (error) throw error;
+    }
+    setCover(URL.createObjectURL(blob)); toast('Your photo is in. Looks amazing.');
+  } catch(err) { toast('That photo did not upload. Try a different one, or a smaller file.'); }
+  finally { btn.removeAttribute('aria-busy'); }
+});
+
+/* Copy contact */
+$('mail').textContent = CONTACT;
+$('copyBtn').addEventListener('click', async e => {
+  try { await navigator.clipboard.writeText(CONTACT); e.target.textContent='Copied'; }
+  catch(_) { const r=document.createRange(); r.selectNodeContents($('mail')); const s=getSelection(); s.removeAllRanges(); s.addRange(r); e.target.textContent='Selected'; }
+  setTimeout(()=>e.target.textContent='Copy',1800);
+});
+
+/* Sign in */
+function signinMsg(text, ok){ const m=$('signinMsg'); m.textContent=text; m.className='msg'+(ok?' ok':''); m.hidden=false; }
+$('signinForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email = $('emailIn').value.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { signinMsg('Enter the email address you used when you booked.'); return; }
+  const btn=$('sendBtn'); btn.disabled=true; btn.textContent='Sending...';
+  const {error} = await sb.auth.signInWithOtp({email, options:{shouldCreateUser:false, emailRedirectTo: location.origin + location.pathname}});
+  btn.disabled=false; btn.textContent='Email me my link';
+  if (!error) { signinMsg('Check your inbox. We sent a sign-in link to '+email+'. Open it on this device.', true); return; }
+  const m = (error.message||'').toLowerCase();
+  if (m.includes('signup') || m.includes('not found') || m.includes('not allowed')) signinMsg('We could not find a film for that email. Use the email you booked with, or reach out to '+CONTACT+'.');
+  else if (m.includes('rate') || m.includes('seconds')) signinMsg('For security, please wait a minute before asking for another link.');
+  else signinMsg('Something went wrong on our end. Please try again in a minute.');
+});
+async function signOut(){ if (sb) await sb.auth.signOut(); location.hash=''; show('signin'); }
+$('signoutBtn').addEventListener('click', signOut);
+$('signoutAlt').addEventListener('click', signOut);
+
+async function loadCouple(){
+  if (loadCouple.busy) return; loadCouple.busy = true;
+  try { await loadCoupleInner(); } finally { loadCouple.busy = false; }
+}
+async function loadCoupleInner(){
+  const {data, error} = await sb.from('couples').select('*').order('wedding_date', {ascending:false}).limit(1);
+  if (error || !data || !data.length) {
+    show('signin'); $('signinForm').querySelectorAll('label,input,#sendBtn').forEach(el => el.hidden = true);
+    signinMsg('You are signed in, but your film page is not ready yet. We will let you know as soon as it is. Questions: '+CONTACT);
+    $('signoutAlt').hidden = false; return;
+  }
+  current = data[0]; render(current); show('app'); loadCover();
+}
+
+/* Demo */
+function startDemo(){
+  const bar=$('demoBar'), chips=$('chips'); bar.hidden=false;
+  const opts = [{n:'Before the wedding', v:-1}].concat(STAGES.map((s,k)=>({n:s.n, v:k})));
+  const demo = Object.assign({}, DEMO_COUPLE);
+  opts.forEach(o => { const b=document.createElement('button'); b.type='button'; b.textContent=o.n;
+    b.addEventListener('click', () => { demo.stage_index=o.v; demo.wedding_date = o.v<0 ? new Date(Date.now()+23*86400000).toISOString().slice(0,10) : DEMO_COUPLE.wedding_date;
+      if (o.v===6) demo.stage_dates=['2026-08-24','2026-09-14','2026-09-22','2026-12-01','2026-12-12','2027-01-06','2027-01-15'];
+      else demo.stage_dates=DEMO_COUPLE.stage_dates;
+      render(demo); [...chips.children].forEach(x=>x.setAttribute('aria-pressed', x===b)); });
+    chips.appendChild(b); });
+  current = demo; render(demo); show('app');
+  chips.children[3].setAttribute('aria-pressed','true');
+}
+
+async function start(){
+  if (DEMO) { startDemo(); return; }
+  if (!sb) { show('signin'); signinMsg('We could not load the sign-in service. Please refresh the page.'); return; }
+  sb.auth.onAuthStateChange((ev, session) => { if (ev === 'SIGNED_IN' && session) loadCouple(); });
+  const {data:{session}} = await sb.auth.getSession();
+  if (session) loadCouple(); else show('signin');
+}
+start();
+})();
+</script>
+</body>
+</html>
