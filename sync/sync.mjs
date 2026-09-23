@@ -27,7 +27,7 @@ const PACKAGES = {
   ],
   'The Short Film': [
     ['Wedding film episode', 'Your 10 to 15 minute wedding day episode', 'Episode Delivered', 'film', 2],
-    ['Ceremony film', 'Your full ceremony, start to finish', 'Ceremony Film Delivered', 'film', 1],
+    ['Ceremony film', 'Your full ceremony, start to finish', 'Ceremony Film Delivered', 'ceremony', 1],
     ['Social Drop reels', 'Short reels made for sharing', 'Social Drop Delivered', 'reels', 1],
     ['Raw footage film', 'The unedited footage of your day', 'Raw Footage Delivered', 'raw', 1],
   ],
@@ -104,6 +104,9 @@ async function buildCouple(w) {
 
   const filmLink = (d('Episode Delivered') || wStage === 'Delivered' || wStage === 'Complete') ? httpsOnly(p.url(W['Client Film Link'])) : null;
   const rawLink = d('Raw Footage Delivered') ? httpsOnly(p.url(W['Raw Footage Link'])) : null;
+  // Ceremony and reels live in Dropbox Server Backup (VidFlow credits cost). Each has its own link field.
+  const ceremonyLink = httpsOnly(p.url(W['Ceremony Film Link']));
+  const reelsLink = httpsOnly(p.url(W['Reels Link']));
 
   const pkg = p.select(W['Package']) || 'The Feature';
   const reelState = p.select(B['Social Drop']);
@@ -111,8 +114,9 @@ async function buildCouple(w) {
     const date = d(field);
     let status;
     if (kind === 'reels') status = (date || reelState === 'Sent to couple') ? 'ready' : (reelState === 'SemMedia making' || reelState === 'Matt review') ? 'work' : 'soon';
-    else status = date || (stage === 6 && kind === 'film') ? 'ready' : (stage >= at ? 'work' : 'soon');
-    const link = status === 'ready' ? (kind === 'film' ? filmLink : kind === 'raw' ? rawLink : null) : null;
+    else status = date || (stage === 6 && (kind === 'film' || kind === 'ceremony')) ? 'ready' : (stage >= at ? 'work' : 'soon');
+    const links = { film: filmLink, raw: rawLink, ceremony: ceremonyLink || filmLink, reels: reelsLink };
+    const link = status === 'ready' ? links[kind] || null : null;
     return { name, desc, status, date: date || null, link };
   });
 
