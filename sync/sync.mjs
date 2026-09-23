@@ -40,7 +40,8 @@ const ctDate = iso => iso ? new Intl.DateTimeFormat('en-CA', { timeZone: 'Americ
 const p = {
   title: x => (x?.title || []).map(t => t.plain_text).join('').trim(),
   text: x => (x?.rich_text || []).map(t => t.plain_text).join('').trim(),
-  email: x => (x?.email || '').trim().toLowerCase(),
+  // An email field can hold more than one address ("a@x.com, b@y.com"); split them.
+  emails: x => (x?.email || '').toLowerCase().split(/[\s,;]+/).filter(Boolean),
   date: x => x?.date?.start ? x.date.start.slice(0, 10) : null,
   select: x => x?.select?.name || null,
   url: x => (x?.url || '').trim() || null,
@@ -49,6 +50,8 @@ const p = {
                   : x?.formula?.type === 'string' && /^\d{4}-\d{2}-\d{2}/.test(x.formula.string || '') ? x.formula.string.slice(0, 10) : null,
   relation: x => (x?.relation || []).map(r => r.id),
 };
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/;
+let badEmails = 0;
 const httpsOnly = u => u && /^https:\/\//i.test(u) ? u : null;
 
 async function notion(path, body) {
@@ -113,12 +116,17 @@ async function buildCouple(w) {
     return { name, desc, status, date: date || null, link };
   });
 
+  // Typos (no @, no .com) are left out and counted, so one bad address never stops the whole sync.
+  const rawEmails = [...p.emails(W['Client Email']), ...p.emails(W['Client Email 2'])];
+  const emails = [...new Set(rawEmails.filter(e => EMAIL_RE.test(e)))];
+  badEmails += rawEmails.length - rawEmails.filter(e => EMAIL_RE.test(e)).length;
+
   const due = p.formulaDate(W['Delivery Due']);
   const lastEdited = [b?.last_edited_time, w.last_edited_time].filter(Boolean).sort().pop();
 
   return {
     notion_id: w.id,
-    emails: [...new Set([p.email(W['Client Email']), p.email(W['Client Email 2'])].filter(Boolean))],
+    emails,
     names: p.title(W['Couple']).replace(/\s*\+\s*/g, ' & '),
     collection: pkg,
     wedding_date: weddingDate,
@@ -163,21 +171,33 @@ for (const row of existing || []) {
   }
 }
 
-// Make sure every couple email can receive a sign-in link.
-const users = await sb('/auth/v1/admin/users?per_page=1000');
-const known = new Set((users?.users || []).map(u => (u.email || '').toLowerCase()));
-let created = 0;
+// Make sure every couple email can receive a sign-in link (new couples AND emails changed in Notion).
+// Old emails need no clean-up: access follows the couples.emails list, so a removed email just sees nothing.
+const known = new Set();
+for (let page = 1; ; page++) {
+  const list = (await sb(`/auth/v1/admin/users?page=${page}&per_page=1000`))?.users || [];
+  list.forEach(u => known.add((u.email || '').toLowerCase()));
+  if (list.length < 1000) break;
+}
+let created = 0, failed = 0;
 for (const email of new Set(couples.flatMap(c => c.emails))) {
   if (known.has(email)) continue;
-  await sb('/auth/v1/admin/users', { method: 'POST', body: JSON.stringify({ email, email_confirm: true }) });
-  created++;
+  try {
+    await sb('/auth/v1/admin/users', { method: 'POST', body: JSON.stringify({ email, email_confirm: true }) });
+    created++;
+  } catch (err) {
+    if (!/already|exists/i.test(err.message)) failed++;  // keep going; the run is marked failed at the end
+  }
 }
 
 if (queue.length) await sb('/rest/v1/notifications', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(queue) });
 const sent = await sendDueEmails(new Map(couples.map(c => [c.notion_id, c])));
 
 // Counts only: GitHub Actions logs can be public, so never log names or emails.
-console.log(`Synced ${couples.length} couple(s); ${skipped} skipped (no Client Email); ${paused} paused; ${created} new sign-in email(s); ${queue.length} update email(s) queued; ${sent} sent.`);
+console.log(`Synced ${couples.length} couple(s); ${skipped} skipped (no Client Email); ${badEmails} invalid email(s) ignored; ${paused} paused; ${created} new sign-in email(s); ${failed} sign-in setup failure(s); ${queue.length} update email(s) queued; ${sent} sent.`);
+// A sign-in setup failure fails the run (GitHub emails info@), after everyone else has synced.
+// Typo'd emails only show in the log count; failing on them would email info@ every 10 minutes.
+if (failed) process.exitCode = 1;
 
 // ---------- status update emails ----------
 // The ONLY client email that goes out without Justin's review: a fixed template, pre-approved 2026-09-23.
