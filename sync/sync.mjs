@@ -206,8 +206,11 @@ if (failed) process.exitCode = 1;
 // ---------- status update emails ----------
 // The ONLY client email that goes out without Justin's review: a fixed template, pre-approved 2026-09-23.
 async function sendDueEmails(byNotion) {
-  const cutoff = new Date(Date.now() - EMAIL_DELAY_MIN * 60000).toISOString();
-  const due = await sb(`/rest/v1/notifications?sent_at=is.null&created_at=lt.${encodeURIComponent(cutoff)}&select=*&order=created_at.asc`) || [];
+  // TEST couples (live demos, email goes to info@) skip the buffer so the email lands on camera.
+  const cutoff = Date.now() - EMAIL_DELAY_MIN * 60000;
+  const isTest = n => /^TEST\s/i.test(byNotion.get(n.notion_id)?.names || '');
+  const due = (await sb(`/rest/v1/notifications?sent_at=is.null&select=*&order=created_at.asc`) || [])
+    .filter(n => new Date(n.created_at).getTime() < cutoff || isTest(n));
   if (!due.length) return 0;
   if (!GMAIL_USER || !GMAIL_APP_PASSWORD) { console.warn('Emails waiting, but GMAIL_USER / GMAIL_APP_PASSWORD secrets are not set.'); return 0; }
   const nodemailer = (await import('nodemailer')).default;
