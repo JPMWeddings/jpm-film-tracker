@@ -49,3 +49,15 @@ create policy "couple replaces own cover" on storage.objects
   for update to authenticated
   using (bucket_id = 'covers' and (storage.foldername(name))[1] in
          (select id::text from public.couples where lower(auth.jwt() ->> 'email') = any (emails)));
+
+-- Status update emails: queued when a film moves forward, sent about 10 minutes later.
+-- Only the sync (service key) can read or write this table. Rows are never deleted.
+create table if not exists public.notifications (
+  id          bigserial primary key,
+  notion_id   text not null,
+  stage_index int not null,
+  created_at  timestamptz not null default now(),
+  sent_at     timestamptz,
+  result      text
+);
+alter table public.notifications enable row level security;

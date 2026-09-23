@@ -3,7 +3,9 @@
 // Copies ONLY client-safe fields. Never copies money, notes, editor names or the internal proxy Dropbox link.
 // Never deletes anything: couples whose Film Tracker box is unticked just lose sign-in access (emails cleared).
 
-const { NOTION_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env;
+const { NOTION_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GMAIL_USER, GMAIL_APP_PASSWORD } = process.env;
+const SITE = 'https://films.jpmweddings.com';
+const EMAIL_DELAY_MIN = 10;
 if (!NOTION_TOKEN || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error('Missing NOTION_TOKEN, SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
   process.exit(1);
@@ -141,6 +143,11 @@ for (const w of weddings) {
   couples.push(c);
 }
 
+// Queue a status email when a film moves FORWARD (never on the first sync, never when it moves back).
+const before = new Map(((await sb('/rest/v1/couples?select=notion_id,stage_index')) || []).map(r => [r.notion_id, r.stage_index]));
+const queue = couples.filter(c => before.has(c.notion_id) && c.stage_index >= 0 && c.stage_index > before.get(c.notion_id))
+                     .map(c => ({ notion_id: c.notion_id, stage_index: c.stage_index }));
+
 if (couples.length) {
   await sb('/rest/v1/couples?on_conflict=notion_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(couples) });
 }
@@ -166,5 +173,62 @@ for (const email of new Set(couples.flatMap(c => c.emails))) {
   created++;
 }
 
+if (queue.length) await sb('/rest/v1/notifications', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(queue) });
+const sent = await sendDueEmails(new Map(couples.map(c => [c.notion_id, c])));
+
 // Counts only: GitHub Actions logs can be public, so never log names or emails.
-console.log(`Synced ${couples.length} couple(s); ${skipped} skipped (no Client Email); ${paused} paused; ${created} new sign-in email(s).`);
+console.log(`Synced ${couples.length} couple(s); ${skipped} skipped (no Client Email); ${paused} paused; ${created} new sign-in email(s); ${queue.length} update email(s) queued; ${sent} sent.`);
+
+// ---------- status update emails ----------
+// The ONLY client email that goes out without Justin's review: a fixed template, pre-approved 2026-09-23.
+async function sendDueEmails(byNotion) {
+  const cutoff = new Date(Date.now() - EMAIL_DELAY_MIN * 60000).toISOString();
+  const due = await sb(`/rest/v1/notifications?sent_at=is.null&created_at=lt.${encodeURIComponent(cutoff)}&select=*&order=created_at.asc`) || [];
+  if (!due.length) return 0;
+  if (!GMAIL_USER || !GMAIL_APP_PASSWORD) { console.warn('Emails waiting, but GMAIL_USER / GMAIL_APP_PASSWORD secrets are not set.'); return 0; }
+  const nodemailer = (await import('nodemailer')).default;
+  const mail = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD } });
+  const mark = (id, result) => sb(`/rest/v1/notifications?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ sent_at: new Date().toISOString(), result }) });
+
+  // One email per couple: if a film jumped two stages in one window, only the newest one goes out.
+  const latest = new Map();
+  for (const n of due) { const prev = latest.get(n.notion_id); if (prev) await mark(prev.id, 'superseded'); latest.set(n.notion_id, n); }
+
+  let count = 0;
+  for (const n of latest.values()) {
+    const c = byNotion.get(n.notion_id);
+    if (!c || !c.emails.length) { await mark(n.id, 'skipped: no access'); continue; }
+    if (c.stage_index < n.stage_index) { await mark(n.id, 'skipped: moved back'); continue; }
+    const e = statusEmail(c);
+    await mail.sendMail({ from: `"JPM Weddings" <${GMAIL_USER}>`, to: c.emails.join(', '), replyTo: GMAIL_USER, subject: e.subject, text: e.text, html: e.html });
+    await mark(n.id, 'sent'); count++;
+  }
+  return count;
+}
+
+function statusEmail(c) {
+  const S = [
+    ['Your wedding footage is safe with us', 'Footage secured', 'Every camera card and audio file from your day is now safely backed up in two places. Next, our team starts organizing it all so your story is ready to build.'],
+    ['Your story is taking shape', 'Crafting your story', 'Our team is organizing hours of footage, syncing every angle and pulling your confessionals so your film is ready for the edit.'],
+    ['Your film is in the edit bay', 'Editing your film', 'Justin is now editing your film: shaping the arc of your day, the confessionals, and the moments you did not even see happen.'],
+    ['Your film is getting its cinematic look', 'Color grading', 'The edit is locked and your film is with our colorist, getting the cinematic look that makes it feel like a show you would binge.'],
+    ['Your film is getting its sound', 'Sound and music', 'We are mixing every mic, the vows and the speeches so every word lands, and scoring your film with music that fits you.'],
+    ['Your film is in final review', 'Final quality review', 'Our lead filmmaker is watching your film start to finish, frame by frame, before it reaches you. You are almost there.'],
+    ['Your film is ready', 'Delivered', 'Your film is ready. Grab your favorite people, press play, and relive it all. Your links are waiting on your film tracker.'],
+  ];
+  const [subject, stage, body] = S[Math.max(0, Math.min(6, c.stage_index))];
+  const hi = `Hi ${c.names.replace(/^TEST\s+/i, '')},`;
+  const text = `${hi}\n\nYour film just moved to a new stage: ${stage}.\n\n${body}\n\nSee your film tracker: ${SITE}\n\nJustin and the JPM team`;
+  const html = `<div style="background:#08090b;padding:40px 16px;font-family:Lato,Helvetica,Arial,sans-serif;color:#f3f4f6">
+<div style="max-width:480px;margin:0 auto;background:#111317;border:1px solid #252a33;border-radius:16px;padding:32px">
+<p style="margin:0 0 6px;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#4f86f2;font-weight:bold">Film update</p>
+<h1 style="margin:0 0 16px;font-family:Georgia,serif;font-weight:normal;font-size:28px;line-height:1.2;color:#f3f4f6">${subject}</h1>
+<p style="margin:0 0 12px;color:#c9ced6;line-height:1.6">${hi}</p>
+<p style="margin:0 0 12px;color:#c9ced6;line-height:1.6">Your film just moved to a new stage: <strong style="color:#f3f4f6">${stage}</strong>.</p>
+<p style="margin:0 0 24px;color:#c9ced6;line-height:1.6">${body}</p>
+<a href="${SITE}" style="display:inline-block;background:#2f6bea;color:#ffffff;text-decoration:none;font-weight:bold;padding:14px 22px;border-radius:10px">See your film tracker</a>
+<p style="margin:24px 0 0;color:#c9ced6;line-height:1.6">Justin and the JPM team</p>
+<p style="margin:16px 0 0;font-size:12px;color:#5d6571;line-height:1.6">Questions? Just reply to this email.</p>
+</div></div>`;
+  return { subject, text, html };
+}

@@ -2,8 +2,12 @@ name: Sync film tracker from Notion
 
 on:
   schedule:
-    - cron: "20 * * * *"   # every hour
-  workflow_dispatch: {}    # "Run workflow" button for an instant update
+    - cron: "*/10 * * * *"  # every 10 minutes (GitHub may run a few minutes late)
+  workflow_dispatch: {}     # "Run workflow" button for an instant update
+
+concurrency:
+  group: film-tracker-sync
+  cancel-in-progress: false
 
 jobs:
   sync:
@@ -14,9 +18,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - name: Install email sender
+        run: npm install --no-save --no-audit --no-fund nodemailer@6.9.15
       - name: Sync
         run: node sync/sync.mjs
         env:
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GMAIL_USER: info@jpmweddings.com
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
