@@ -165,7 +165,11 @@ for (const w of weddings) {
 }
 
 // Queue a status email when a film moves FORWARD (never on the first sync, never when it moves back).
-const before = new Map(((await sb('/rest/v1/couples?select=notion_id,stage_index')) || []).map(r => [r.notion_id, r.stage_index]));
+const prior = (await sb('/rest/v1/couples?select=notion_id,stage_index,emails')) || [];
+const before = new Map(prior.map(r => [r.notion_id, r.stage_index]));
+// Couples that had no sign-in access before this run (new, or Film Tracker just re-ticked after a pause).
+const wasInactive = new Set(prior.filter(r => !r.emails?.length).map(r => r.notion_id));
+const known0 = new Set(prior.map(r => r.notion_id));
 const queue = couples.filter(c => before.has(c.notion_id) && c.stage_index >= 0 && c.stage_index > before.get(c.notion_id))
                      .map(c => ({ notion_id: c.notion_id, stage_index: c.stage_index }));
 
@@ -225,12 +229,15 @@ async function mailer() {
 // ---------- welcome emails ----------
 // Approved by Justin 2026-09-23 as the second automatic client email (fixed template): sent once to each couple email,
 // on the first sync after Film Tracker is ticked (or a new email is added). Logged as notifications rows with stage_index -100.
-// TEST couples are skipped; the demo sends its own copy.
+// TEST couples (demo, email goes to info@) get it every time Film Tracker is re-ticked, so each demo shows the real email.
 async function sendWelcomes(list) {
   const todo = [];
   const done = new Set(((await sb(`/rest/v1/notifications?stage_index=eq.${WELCOME}&select=result`)) || []).map(r => (r.result || '').replace(/^welcome:/, '')));
   for (const c of list) {
-    if (/^TEST\s/i.test(c.names)) continue;
+    if (/^TEST\s/i.test(c.names)) {
+      if (!known0.has(c.notion_id) || wasInactive.has(c.notion_id)) c.emails.forEach(email => todo.push([c, email]));
+      continue;
+    }
     for (const email of c.emails) if (!done.has(email)) todo.push([c, email]);
   }
   if (!todo.length) return 0;
