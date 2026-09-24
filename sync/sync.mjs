@@ -267,7 +267,7 @@ ${p(hi)}${p('We made something special for you: your own Film Tracker, where you
 }
 
 // ---------- status update emails ----------
-// The ONLY client email that goes out without Justin's review: a fixed template, pre-approved 2026-09-23.
+// One of the two client emails that go out without Justin's review (with the welcome email): fixed template, pre-approved 2026-09-23.
 async function sendDueEmails(byNotion) {
   // TEST couples (live demos, email goes to info@) skip the buffer so the email lands on camera.
   const cutoff = Date.now() - EMAIL_DELAY_MIN * 60000;
