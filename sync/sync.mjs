@@ -6,6 +6,8 @@
 const { NOTION_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GMAIL_USER, GMAIL_APP_PASSWORD } = process.env;
 const SITE = 'https://films.jpmweddings.com';
 const EMAIL_DELAY_MIN = 10;
+const WELCOME = -100;   // notifications.stage_index marker for sent welcome emails
+let transport;          // Gmail sender, created on first use
 if (!NOTION_TOKEN || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error('Missing NOTION_TOKEN, SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
   process.exit(1);
@@ -212,7 +214,6 @@ console.log(`Synced ${couples.length} couple(s); ${skipped} skipped (no Client E
 if (failed) process.exitCode = 1;
 
 // ---------- email ----------
-let transport;
 async function mailer() {
   if (!transport) {
     const nodemailer = (await import('nodemailer')).default;
@@ -225,7 +226,6 @@ async function mailer() {
 // Approved by Justin 2026-09-23 as the second automatic client email (fixed template): sent once to each couple email,
 // on the first sync after Film Tracker is ticked (or a new email is added). Logged as notifications rows with stage_index -100.
 // TEST couples are skipped; the demo sends its own copy.
-const WELCOME = -100;
 async function sendWelcomes(list) {
   const todo = [];
   const done = new Set(((await sb(`/rest/v1/notifications?stage_index=eq.${WELCOME}&select=result`)) || []).map(r => (r.result || '').replace(/^welcome:/, '')));
