@@ -255,18 +255,18 @@ async function sendWelcomes(list) {
 
 function welcomeEmail(c) {
   const hi = `Hi ${c.names.replace(/^TEST\s+/i, '').replace(/ & /g, ' and ')},`;
-  const subject = 'Your JPM Film Tracker is live';
-  const text = `${hi}\n\nWe made something special for you: your own Film Tracker, where you can watch your wedding film move from footage to premiere.\n\nOpen your Film Tracker: ${SITE}\nEnter this email address and we will send you a one-time sign-in link. No password needed. You can even add your favorite photo to make the page yours.\n\nEvery time your film moves to the next stage, you will get a short update email from us.\n\nCan't wait for you to see it!\nGrecel\nClient Journey Manager, JPM Weddings`;
+  const subject = 'Your JPM Client Dashboard is live';
+  const text = `${hi}\n\nWe made something special for you: your own Client Dashboard, where you can watch your wedding film move from footage to premiere night.\n\nOpen your Client Dashboard: ${SITE}\nEnter this email address and we will send you a one-time sign-in link. No password, no hassle. You can even add your favorite photo to make it yours.\n\nEvery time your film moves to the next stage, you will get a short update email from us.\n\nWe cannot wait for you to see it!\nGrecel\nClient Journey Manager, JPM Weddings`;
   const p = t => `<p style="margin:0 0 12px;color:#c9ced6;line-height:1.6">${t}</p>`;
   const html = `<div style="background:#08090b;padding:40px 16px;font-family:Lato,Helvetica,Arial,sans-serif;color:#f3f4f6">
 <div style="max-width:480px;margin:0 auto;background:#111317;border:1px solid #252a33;border-radius:16px;padding:32px">
 <p style="margin:0 0 6px;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#4f86f2;font-weight:bold">JPM Weddings</p>
-<h1 style="margin:0 0 16px;font-family:Georgia,serif;font-weight:normal;font-size:30px;line-height:1.15;color:#f3f4f6">Your Film Tracker is live</h1>
-${p(hi)}${p('We made something special for you: your own Film Tracker, where you can watch your wedding film move from footage to premiere.')}
-<p style="margin:0 0 24px;color:#c9ced6;line-height:1.6">Tap the button, enter this email address, and we will send you a one-time sign-in link. No password needed. You can even add your favorite photo to make the page yours.</p>
-<a href="${SITE}" style="display:inline-block;background:#2f6bea;color:#ffffff;text-decoration:none;font-weight:bold;padding:14px 22px;border-radius:10px">Open my Film Tracker</a>
+<h1 style="margin:0 0 16px;font-family:Georgia,serif;font-weight:normal;font-size:30px;line-height:1.15;color:#f3f4f6">Your Client Dashboard is live</h1>
+${p(hi)}${p('We made something special for you: your own Client Dashboard, where you can watch your wedding film move from footage to premiere night.')}
+<p style="margin:0 0 24px;color:#c9ced6;line-height:1.6">Tap the button, enter this email address, and we will send you a one-time sign-in link. No password, no hassle. You can even add your favorite photo to make it yours.</p>
+<a href="${SITE}" style="display:inline-block;background:#2f6bea;color:#ffffff;text-decoration:none;font-weight:bold;padding:14px 22px;border-radius:10px">Open my Client Dashboard</a>
 <p style="margin:24px 0 12px;color:#c9ced6;line-height:1.6">Every time your film moves to the next stage, you will get a short update email from us.</p>
-<p style="margin:0 0 4px;color:#c9ced6;line-height:1.6">Can't wait for you to see it!</p>
+<p style="margin:0 0 4px;color:#c9ced6;line-height:1.6">We cannot wait for you to see it!</p>
 <p style="margin:0;color:#c9ced6;line-height:1.6">Grecel<br>Client Journey Manager, JPM Weddings</p>
 <p style="margin:16px 0 0;font-size:12px;color:#5d6571;line-height:1.6">Questions? Just reply to this email.</p>
 </div></div>`;
@@ -304,17 +304,17 @@ async function sendDueEmails(byNotion) {
 
 function statusEmail(c) {
   const S = [
-    ['Your wedding footage is safe with us', 'Footage secured', 'Every camera card and audio file from your day is now safely backed up in two places. Next, our team starts organizing it all so your story is ready to build.'],
-    ['Your story is taking shape', 'Crafting your story', 'Our team is organizing hours of footage, syncing every angle and pulling your confessionals so your film is ready for the edit.'],
-    ['Your film is in the edit bay', 'Editing your film', 'Justin is now editing your film: shaping the arc of your day, the confessionals, and the moments you did not even see happen.'],
-    ['Your film is getting its cinematic look', 'Color grading', 'The edit is locked and your film is with our colorist, getting the cinematic look that makes it feel like a show you would binge.'],
-    ['Your film is getting its sound', 'Sound and music', 'We are mixing every mic, the vows and the speeches so every word lands, and scoring your film with music that fits you.'],
-    ['Your film is in final review', 'Final quality review', 'Our lead filmmaker is watching your film start to finish, frame by frame, before it reaches you. You are almost there.'],
-    ['Your film is ready', 'Delivered', 'Your film is ready. Grab your favorite people, press play, and relive it all. Your links are waiting on your film tracker.'],
+    ['Your wedding footage is safe with us', 'Footage secured', 'Every card and audio file from your day is now backed up in two places. Your story is safe. Next, we start sorting it all so the edit can begin.'],
+    ['Your story is taking shape', 'Crafting your story', 'We are sorting hours of footage, syncing every angle and pulling your confessionals so the edit can begin.'],
+    ['Your film is in the edit bay', 'Editing your film', 'Justin is in the edit bay building your episode: the arc of your day, the confessionals, the moments you did not even see happen.'],
+    ['Your film is getting its cinematic look', 'Color grading', 'The edit is locked and our colorist is giving your film that cinematic look that feels like a show you would binge.'],
+    ['Your film is getting its sound', 'Sound and music', 'Every mic, vow and toast is getting mixed so each word lands, then we score it with music that feels like you.'],
+    ['Your film is in final review', 'Final quality review', 'Our lead filmmaker is watching your film start to finish, frame by frame, before it reaches you. Almost there.'],
+    ['Your film is ready', 'Delivered', 'It is ready. Grab your favorite people, press play, and relive it all. Your links are waiting on your Client Dashboard.'],
   ];
   const [subject, stage, body] = S[Math.max(0, Math.min(6, c.stage_index))];
   const hi = `Hi ${c.names.replace(/^TEST\s+/i, '')},`;
-  const text = `${hi}\n\nYour film just moved to a new stage: ${stage}.\n\n${body}\n\nSee your film tracker: ${SITE}\n\nJustin and the JPM team`;
+  const text = `${hi}\n\nYour film just moved to a new stage: ${stage}.\n\n${body}\n\nSee your Client Dashboard: ${SITE}\n\nJustin and the JPM team`;
   const html = `<div style="background:#08090b;padding:40px 16px;font-family:Lato,Helvetica,Arial,sans-serif;color:#f3f4f6">
 <div style="max-width:480px;margin:0 auto;background:#111317;border:1px solid #252a33;border-radius:16px;padding:32px">
 <p style="margin:0 0 6px;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#4f86f2;font-weight:bold">Film update</p>
@@ -322,7 +322,7 @@ function statusEmail(c) {
 <p style="margin:0 0 12px;color:#c9ced6;line-height:1.6">${hi}</p>
 <p style="margin:0 0 12px;color:#c9ced6;line-height:1.6">Your film just moved to a new stage: <strong style="color:#f3f4f6">${stage}</strong>.</p>
 <p style="margin:0 0 24px;color:#c9ced6;line-height:1.6">${body}</p>
-<a href="${SITE}" style="display:inline-block;background:#2f6bea;color:#ffffff;text-decoration:none;font-weight:bold;padding:14px 22px;border-radius:10px">See your film tracker</a>
+<a href="${SITE}" style="display:inline-block;background:#2f6bea;color:#ffffff;text-decoration:none;font-weight:bold;padding:14px 22px;border-radius:10px">See your Client Dashboard</a>
 <p style="margin:24px 0 0;color:#c9ced6;line-height:1.6">Justin and the JPM team</p>
 <p style="margin:16px 0 0;font-size:12px;color:#5d6571;line-height:1.6">Questions? Just reply to this email.</p>
 </div></div>`;

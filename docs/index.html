@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="theme-color" content="#08090b">
-<title>Your Film | JPM Weddings</title>
+<title>Client Dashboard | JPM Weddings</title>
 <link rel="icon" href="assets/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -186,11 +186,11 @@ footer em{font-family:var(--display);font-size:18px;color:var(--muted)}
   <div class="cover" aria-hidden="true"></div>
   <form class="panel" id="signinForm" novalidate>
     <img src="assets/logo.png" alt="JPM Weddings">
-    <h1>Your Film Tracker</h1>
-    <p id="signinIntro">Enter the email you used when you booked with us. We will send you a one-time sign-in link. No password needed.</p>
+    <h1>Welcome to Your Client Dashboard</h1>
+    <p id="signinIntro">Your wedding film is in the works, and this is where you watch it come to life. Pop in the email you booked with and we will send you a one-time link. No password, no hassle.</p>
     <label for="emailIn">Email</label>
     <input id="emailIn" type="email" autocomplete="email" inputmode="email" required placeholder="you@example.com">
-    <button class="btn" id="sendBtn" type="submit">Email me my link</button>
+    <button class="btn" id="sendBtn" type="submit">Send me my link</button>
     <div class="msg" id="signinMsg" role="status" hidden></div>
     <button class="linkbtn" id="signoutAlt" type="button" hidden>Sign out</button>
     <p class="fine">Private to you. Your link works once and expires after one hour.</p>
@@ -207,7 +207,7 @@ footer em{font-family:var(--display);font-size:18px;color:var(--muted)}
     </button>
     <input id="photoIn" type="file" accept="image/*" hidden>
     <div class="wrap inner">
-      <div class="brand"><img src="assets/logo.png" alt="JPM Weddings"><span>Your film tracker</span></div>
+      <div class="brand"><img src="assets/logo.png" alt="JPM Weddings"><span>Client Dashboard</span></div>
       <div class="hero-copy">
         <div class="eyebrow" id="collection"></div>
         <h1 id="names"></h1>
@@ -219,15 +219,15 @@ footer em{font-family:var(--display);font-size:18px;color:var(--muted)}
 
   <main class="wrap">
     <section aria-labelledby="journey">
-      <p class="label">Your film's journey</p>
-      <h2 id="journey">From wedding day to premiere</h2>
+      <p class="label">The journey</p>
+      <h2 id="journey">From your wedding day to premiere night</h2>
       <div class="track" aria-hidden="true"><div class="fill" id="fill"></div><div class="head" id="head"></div><div class="tc" id="tc"></div></div>
       <ol class="chapters" id="chapters"></ol>
     </section>
 
     <section class="stage" aria-labelledby="stageName">
       <div class="card feature">
-        <p class="label" style="margin-bottom:10px">What is happening now</p>
+        <p class="label" style="margin-bottom:10px">Right now</p>
         <h2 id="stageName"></h2>
         <p id="stageText"></p>
         <div class="ctas" id="ctas"></div>
@@ -235,19 +235,19 @@ footer em{font-family:var(--display);font-size:18px;color:var(--muted)}
       </div>
       <div class="card">
         <dl class="facts" id="facts"></dl>
-        <p class="note">Every film is edited by hand, so timing can shift a little. We will always keep you posted.</p>
+        <p class="note">Every film is crafted by hand, so timing can shift a little. We will always keep you in the loop.</p>
       </div>
     </section>
 
     <section aria-labelledby="dl">
-      <p class="label">Your deliverables</p>
-      <h2 id="dl">Everything in your collection</h2>
+      <p class="label">Your collection</p>
+      <h2 id="dl">Everything you are getting</h2>
       <div class="deliv" id="deliv"></div>
     </section>
 
     <section>
       <div class="card help">
-        <p><strong>Questions about your film?</strong> Grecel, your Client Journey Manager, is here for you.</p>
+        <p><strong>Questions?</strong> Grecel, your Client Journey Manager, is a message away.</p>
         <div class="addr"><span id="mail"></span><button class="copy" id="copyBtn" type="button">Copy</button></div>
       </div>
     </section>
@@ -273,15 +273,15 @@ const CONTACT = C.contactEmail || 'Grecel@jpmweddings.com';
 const $ = id => document.getElementById(id);
 
 const STAGES = [
-  {n:'Footage secured', t:'Every camera card and audio file from your day is safely backed up in two places. Nothing gets lost.'},
-  {n:'Crafting your story', t:'Our team is organizing hours of footage, syncing every angle and pulling your confessionals so your story is ready to build.'},
-  {n:'Editing your film', t:'Justin is in the edit bay shaping your episode: the arc of your day, the confessionals, the moments you did not even see happen.'},
-  {n:'Color grading', t:'Your film is with our colorist, getting the cinematic look that makes it feel like a show you would binge.'},
-  {n:'Sound and music', t:'Mixing every mic, the vows and the speeches so every word lands, then scoring it with music that fits you.'},
-  {n:'Final quality review', t:'Our lead filmmaker watches your film start to finish, frame by frame, before it ever reaches you.'},
-  {n:'Delivered', t:'Your film is ready. Grab your favorite people, press play, and relive it all.'}
+  {n:'Footage secured', t:'Every card and audio file from your day is backed up in two places. Your story is safe.'},
+  {n:'Crafting your story', t:'We are sorting hours of footage, syncing every angle and pulling your confessionals so the edit can begin.'},
+  {n:'Editing your film', t:'Justin is in the edit bay building your episode: the arc of your day, the confessionals, the moments you did not even see happen.'},
+  {n:'Color grading', t:'Our colorist is giving your film that cinematic look that feels like a show you would binge.'},
+  {n:'Sound and music', t:'Every mic, vow and toast gets mixed so each word lands, then we score it with music that feels like you.'},
+  {n:'Final quality review', t:'Our lead filmmaker watches your film start to finish, frame by frame, before it reaches you.'},
+  {n:'Delivered', t:'It is ready. Grab your favorite people, press play, and relive it all.'}
 ];
-const PRE = {n:'Counting down to your wedding', t:'We are getting ready for your big day. Once it is filmed, this page will follow your film through every step until it premieres.'};
+const PRE = {n:'Counting down to your wedding', t:'We are getting ready for your big day. Once it is filmed, this dashboard will follow your film through every step until it premieres.'};
 
 const DEMO_COUPLE = {id:'demo', names:'Ava & Marcus', collection:'The Feature', wedding_date:'2026-08-22', venue:'Hotel Emma, San Antonio',
   stage_index:2, stage_dates:['2026-08-24','2026-09-14','2026-09-22',null,null,null,null], delivery_window:'Jan to Feb 2027', last_update:'2026-09-22',
@@ -342,7 +342,7 @@ function render(c){
   const film = safeUrl(c.film_link), raw = safeUrl(c.raw_link);
   $('ctas').innerHTML = (i >= 6 && film ? '<a class="btn" href="'+esc(film)+'" target="_blank" rel="noopener">Watch your film</a>' : '') +
                         (raw ? '<a class="btn ghost" href="'+esc(raw)+'" target="_blank" rel="noopener">Download raw footage</a>' : '');
-  $('stageWhen').textContent = i >= 6 ? 'Your links stay here whenever you want to come back.' : 'This page updates on its own as your film moves forward.';
+  $('stageWhen').textContent = i >= 6 ? 'Your links stay here whenever you want to come back.' : 'This dashboard updates on its own as your film moves forward.';
 
   let facts = [['Collection', c.collection || '']];
   if (c.wedding_date) facts.push(['Wedding date', fmt(c.wedding_date)]);
@@ -409,7 +409,7 @@ $('signinForm').addEventListener('submit', async e => {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { signinMsg('Enter the email address you used when you booked.'); return; }
   const btn=$('sendBtn'); btn.disabled=true; btn.textContent='Sending...';
   const {error} = await sb.auth.signInWithOtp({email, options:{shouldCreateUser:false, emailRedirectTo: location.origin + location.pathname}});
-  btn.disabled=false; btn.textContent='Email me my link';
+  btn.disabled=false; btn.textContent='Send me my link';
   if (!error) { signinMsg('Check your inbox. We sent a sign-in link to '+email+'. Open it on this device.', true); return; }
   const m = (error.message||'').toLowerCase();
   if (m.includes('signup') || m.includes('not found') || m.includes('not allowed')) signinMsg('We could not find a film for that email. Use the email you booked with, or reach out to '+CONTACT+'.');
@@ -428,7 +428,7 @@ async function loadCoupleInner(){
   const {data, error} = await sb.from('couples').select('*').order('wedding_date', {ascending:false}).limit(1);
   if (error || !data || !data.length) {
     show('signin'); $('signinForm').querySelectorAll('label,input,#sendBtn').forEach(el => el.hidden = true);
-    signinMsg('You are signed in, but your film page is not ready yet. We will let you know as soon as it is. Questions: '+CONTACT);
+    signinMsg('You are signed in, but your dashboard is not ready yet. We will let you know as soon as it is. Questions: '+CONTACT);
     $('signoutAlt').hidden = false; return;
   }
   current = data[0]; render(current); show('app'); loadCover();
