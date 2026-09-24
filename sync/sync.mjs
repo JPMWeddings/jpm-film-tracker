@@ -33,7 +33,7 @@ const PACKAGES = {
   ],
 };
 const CEREMONY = PACKAGES['The Short Film'][1];
-PACKAGES['Custom'] =[PACKAGES['The Feature'][0], PACKAGES['The Feature'][3], PACKAGES['The Feature'][4]];
+PACKAGES['Custom'] = [PACKAGES['The Feature'][0], PACKAGES['The Feature'][3], PACKAGES['The Feature'][4]];
 
 // ---------- helpers ----------
 const todayCT = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(new Date());
@@ -203,12 +203,68 @@ for (const email of new Set(couples.flatMap(c => c.emails))) {
 
 if (queue.length) await sb('/rest/v1/notifications', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(queue) });
 const sent = await sendDueEmails(new Map(couples.map(c => [c.notion_id, c])));
+const welcomed = await sendWelcomes(couples);
 
 // Counts only: GitHub Actions logs can be public, so never log names or emails.
-console.log(`Synced ${couples.length} couple(s); ${skipped} skipped (no Client Email); ${badEmails} invalid email(s) ignored; ${paused} paused; ${created} new sign-in email(s); ${failed} sign-in setup failure(s); ${queue.length} update email(s) queued; ${sent} sent.`);
+console.log(`Synced ${couples.length} couple(s); ${skipped} skipped (no Client Email); ${badEmails} invalid email(s) ignored; ${paused} paused; ${created} new sign-in email(s); ${failed} sign-in setup failure(s); ${queue.length} update email(s) queued; ${sent} sent; ${welcomed} welcome email(s) sent.`);
 // A sign-in setup failure fails the run (GitHub emails info@), after everyone else has synced.
 // Typo'd emails only show in the log count; failing on them would email info@ every 10 minutes.
 if (failed) process.exitCode = 1;
+
+// ---------- email ----------
+let transport;
+async function mailer() {
+  if (!transport) {
+    const nodemailer = (await import('nodemailer')).default;
+    transport = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD } });
+  }
+  return transport;
+}
+
+// ---------- welcome emails ----------
+// Approved by Justin 2026-09-23 as the second automatic client email (fixed template): sent once to each couple email,
+// on the first sync after Film Tracker is ticked (or a new email is added). Logged as notifications rows with stage_index -100.
+// TEST couples are skipped; the demo sends its own copy.
+const WELCOME = -100;
+async function sendWelcomes(list) {
+  const todo = [];
+  const done = new Set(((await sb(`/rest/v1/notifications?stage_index=eq.${WELCOME}&select=result`)) || []).map(r => (r.result || '').replace(/^welcome:/, '')));
+  for (const c of list) {
+    if (/^TEST\s/i.test(c.names)) continue;
+    for (const email of c.emails) if (!done.has(email)) todo.push([c, email]);
+  }
+  if (!todo.length) return 0;
+  if (!GMAIL_USER || !GMAIL_APP_PASSWORD) { console.warn('Welcome emails waiting, but GMAIL_USER / GMAIL_APP_PASSWORD secrets are not set.'); return 0; }
+  const mail = await mailer();
+  let count = 0;
+  for (const [c, email] of todo) {
+    const e = welcomeEmail(c);
+    await mail.sendMail({ from: `"JPM Weddings" <${GMAIL_USER}>`, to: email, replyTo: GMAIL_USER, subject: e.subject, text: e.text, html: e.html });
+    await sb('/rest/v1/notifications', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify([{ notion_id: c.notion_id, stage_index: WELCOME, sent_at: new Date().toISOString(), result: 'welcome:' + email }]) });
+    count++;
+  }
+  return count;
+}
+
+function welcomeEmail(c) {
+  const hi = `Hi ${c.names.replace(/^TEST\s+/i, '').replace(/ & /g, ' and ')},`;
+  const subject = 'Your JPM Film Tracker is live';
+  const text = `${hi}\n\nWe made something special for you: your own Film Tracker, where you can watch your wedding film move from footage to premiere.\n\nOpen your Film Tracker: ${SITE}\nEnter this email address and we will send you a one-time sign-in link. No password needed. You can even add your favorite photo to make the page yours.\n\nEvery time your film moves to the next stage, you will get a short update email from us.\n\nCan't wait for you to see it!\nGrecel\nClient Journey Manager, JPM Weddings`;
+  const p = t => `<p style="margin:0 0 12px;color:#c9ced6;line-height:1.6">${t}</p>`;
+  const html = `<div style="background:#08090b;padding:40px 16px;font-family:Lato,Helvetica,Arial,sans-serif;color:#f3f4f6">
+<div style="max-width:480px;margin:0 auto;background:#111317;border:1px solid #252a33;border-radius:16px;padding:32px">
+<p style="margin:0 0 6px;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#4f86f2;font-weight:bold">JPM Weddings</p>
+<h1 style="margin:0 0 16px;font-family:Georgia,serif;font-weight:normal;font-size:30px;line-height:1.15;color:#f3f4f6">Your Film Tracker is live</h1>
+${p(hi)}${p('We made something special for you: your own Film Tracker, where you can watch your wedding film move from footage to premiere.')}
+<p style="margin:0 0 24px;color:#c9ced6;line-height:1.6">Tap the button, enter this email address, and we will send you a one-time sign-in link. No password needed. You can even add your favorite photo to make the page yours.</p>
+<a href="${SITE}" style="display:inline-block;background:#2f6bea;color:#ffffff;text-decoration:none;font-weight:bold;padding:14px 22px;border-radius:10px">Open my Film Tracker</a>
+<p style="margin:24px 0 12px;color:#c9ced6;line-height:1.6">Every time your film moves to the next stage, you will get a short update email from us.</p>
+<p style="margin:0 0 4px;color:#c9ced6;line-height:1.6">Can't wait for you to see it!</p>
+<p style="margin:0;color:#c9ced6;line-height:1.6">Grecel<br>Client Journey Manager, JPM Weddings</p>
+<p style="margin:16px 0 0;font-size:12px;color:#5d6571;line-height:1.6">Questions? Just reply to this email.</p>
+</div></div>`;
+  return { subject, text, html };
+}
 
 // ---------- status update emails ----------
 // The ONLY client email that goes out without Justin's review: a fixed template, pre-approved 2026-09-23.
@@ -220,8 +276,7 @@ async function sendDueEmails(byNotion) {
     .filter(n => new Date(n.created_at).getTime() < cutoff || isTest(n));
   if (!due.length) return 0;
   if (!GMAIL_USER || !GMAIL_APP_PASSWORD) { console.warn('Emails waiting, but GMAIL_USER / GMAIL_APP_PASSWORD secrets are not set.'); return 0; }
-  const nodemailer = (await import('nodemailer')).default;
-  const mail = nodemailer.createTransport({ host: 'smtp.gmail.com', port: 465, secure: true, auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD } });
+  const mail = await mailer();
   const mark = (id, result) => sb(`/rest/v1/notifications?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ sent_at: new Date().toISOString(), result }) });
 
   // One email per couple: if a film jumped two stages in one window, only the newest one goes out.
