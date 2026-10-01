@@ -77,6 +77,9 @@ button,input{font:inherit}
 .brand{display:flex;align-items:center;justify-content:space-between;gap:16px}
 .brand img{width:92px;height:auto;display:block}
 .brand span{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#c9ced6}
+.switcher{display:inline-flex;align-items:center;gap:10px;margin-bottom:14px;padding:6px 8px 6px 14px;border:1px solid rgba(159,187,255,.45);border-radius:999px;background:rgba(8,9,11,.55);backdrop-filter:blur(4px);max-width:100%}
+.switcher label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#c9ced6;white-space:nowrap}
+.switcher select{font:inherit;font-size:14px;font-weight:700;color:var(--text);background:var(--raise);border:1px solid var(--line);border-radius:999px;padding:6px 12px;min-width:0;max-width:56vw;cursor:pointer}
 .hero-copy{max-width:600px}
 .eyebrow{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--play-hi);font-weight:700}
 .hero h1{font-family:var(--display);font-weight:500;font-size:clamp(46px,8.5vw,92px);line-height:.98;margin:10px 0 14px;letter-spacing:-.01em;text-wrap:balance}
@@ -209,6 +212,7 @@ footer em{font-family:var(--display);font-size:18px;color:var(--muted)}
     <div class="wrap inner">
       <div class="brand"><img src="assets/logo.png" alt="JPM Weddings"><span>Client Dashboard</span></div>
       <div class="hero-copy">
+        <div class="switcher" id="switcher" hidden><label for="projSel">Your weddings</label><select id="projSel"></select></div>
         <div class="eyebrow" id="collection"></div>
         <h1 id="names"></h1>
         <div class="meta" id="meta"></div>
@@ -425,14 +429,37 @@ async function loadCouple(){
   try { await loadCoupleInner(); } finally { loadCouple.busy = false; }
 }
 async function loadCoupleInner(){
-  const {data, error} = await sb.from('couples').select('*').order('wedding_date', {ascending:false}).limit(1);
+  // A planner (or anyone) whose email is on several weddings can read all of them: access follows couples.emails.
+  const {data, error} = await sb.from('couples').select('*').order('wedding_date', {ascending:false});
   if (error || !data || !data.length) {
     show('signin'); $('signinForm').querySelectorAll('label,input,#sendBtn').forEach(el => el.hidden = true);
     signinMsg('You are signed in, but your dashboard is not ready yet. We will let you know as soon as it is. Questions: '+CONTACT);
     $('signoutAlt').hidden = false; return;
   }
-  current = data[0]; render(current); show('app'); loadCover();
+  all = data; current = pickCouple(data);
+  buildSwitcher(); render(current); show('app'); loadCover();
 }
+let all = [];
+function pickCouple(rows){
+  let saved = null; try { saved = localStorage.getItem('jpmLastWedding'); } catch(e) {}
+  const keep = current && current.id;
+  return rows.find(r => r.id === keep) || rows.find(r => r.id === saved) || rows[0];
+}
+function buildSwitcher(){
+  const sw = $('switcher'), sel = $('projSel');
+  if (all.length < 2) { sw.hidden = true; return; }
+  sel.innerHTML = all.map(r => '<option value="'+esc(r.id)+'">'+esc(String(r.names || 'Wedding'))+(r.wedding_date ? ' \u00b7 '+esc(fmt(r.wedding_date)) : '')+'</option>').join('');
+  sel.value = current.id; sw.hidden = false;
+}
+function resetCover(){
+  const el = $('cover'); el.style.backgroundImage = ''; el.classList.remove('photo');
+  $('photoBtn').classList.remove('small'); $('photoCap').textContent = 'Add your photo'; $('photoBtn').setAttribute('aria-label','Add your photo');
+}
+$('projSel').addEventListener('change', e => {
+  const next = all.find(r => r.id === e.target.value); if (!next) return;
+  current = next; try { localStorage.setItem('jpmLastWedding', next.id); } catch(err) {}
+  resetCover(); render(current); loadCover(); window.scrollTo({top:0, behavior:'smooth'});
+});
 
 /* Demo */
 function startDemo(){
