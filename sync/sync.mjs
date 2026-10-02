@@ -17,7 +17,8 @@ const WEDDINGS_DB = '86a48c21402f434a95dfd89aa5d3214b';
 const NOTION = { Authorization: `Bearer ${NOTION_TOKEN}`, 'Notion-Version': '2022-06-28', 'Content-Type': 'application/json' };
 const SB = { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, 'Content-Type': 'application/json' };
 
-const POST_STAGE = { 'Ingest': 0, 'Culling': 1, 'Ready to Edit': 1, 'In Post': 2, 'Color': 3, 'Mix & Master': 4, 'Matt Review': 5, 'Approved': 5, 'Delivered': 6 };
+// Pipeline order (Justin, 2026-10-02): review and approve the cut BEFORE color and sound.
+const POST_STAGE = { 'Ingest': 0, 'Culling': 1, 'Ready to Edit': 1, 'In Post': 2, 'Matt Review': 3, 'Approved': 3, 'Color': 4, 'Mix & Master': 5, 'Delivered': 6 };
 
 const PACKAGES = {
   'The Feature': [
@@ -103,7 +104,8 @@ async function buildCouple(w) {
 
   const d = k => p.date(B[k]);
   const delivered = d('Episode Delivered') || p.date(W['Delivered Date']);
-  const stageDates = [null, d('Edit Started'), d('Sent to Color'), d('Color Back'), d('Sent to Matt'), d('Approved Date'), stage === 6 ? delivered : null];
+  // stageDates[k] = when client stage k was completed: edit started ends crafting, sent to Matt ends editing, approved ends review, color back ends color (no date for sound).
+  const stageDates = [null, d('Edit Started'), d('Sent to Matt'), d('Approved Date'), d('Color Back'), null, stage === 6 ? delivered : null];
 
   const filmLink = (d('Episode Delivered') || wStage === 'Delivered' || wStage === 'Complete') ? httpsOnly(p.url(W['Client Film Link'])) : null;
   // Ceremony, raw footage and reels live in Dropbox Server Backup (VidFlow credits cost), each with its own link field.
@@ -307,9 +309,9 @@ function statusEmail(c) {
     ['Your wedding footage is safe with us', 'Footage secured', 'Every card and audio file from your day is now backed up in two places. Your story is safe. Next, we start sorting it all so the edit can begin.'],
     ['Your story is taking shape', 'Crafting your story', 'We are sorting hours of footage, syncing every angle and pulling your confessionals so the edit can begin.'],
     ['Your film is in the edit bay', 'Editing your film', 'Justin is in the edit bay building your episode: the arc of your day, the confessionals, the moments you did not even see happen.'],
+    ['Your film is in review', 'Cut review', 'Our lead filmmaker is watching your cut start to finish, frame by frame, to make sure every moment is just right. Next up: color and sound.'],
     ['Your film is getting its cinematic look', 'Color grading', 'The edit is locked and our colorist is giving your film that cinematic look that feels like a show you would binge.'],
     ['Your film is getting its sound', 'Sound and music', 'Every mic, vow and toast is getting mixed so each word lands, then we score it with music that feels like you.'],
-    ['Your film is in final review', 'Final quality review', 'Our lead filmmaker is watching your film start to finish, frame by frame, before it reaches you. Almost there.'],
     ['Your film is ready', 'Delivered', 'It is ready. Grab your favorite people, press play, and relive it all. Your links are waiting on your Client Dashboard.'],
   ];
   const [subject, stage, body] = S[Math.max(0, Math.min(6, c.stage_index))];
