@@ -7,6 +7,8 @@ const { NOTION_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GMAIL_USER, GMAIL
 const SITE = 'https://films.jpmweddings.com';
 const EMAIL_DELAY_MIN = 10;
 const WELCOME = -100;   // notifications.stage_index marker for sent welcome emails
+const REORDER_AT = '2026-10-02T05:19:00Z';   // stages 3 to 5 changed meaning here; see the duplicate-email guards
+let emailFailed = 0;
 let transport;          // Gmail sender, created on first use
 if (!NOTION_TOKEN || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error('Missing NOTION_TOKEN, SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
@@ -210,12 +212,17 @@ for (const email of new Set(couples.flatMap(c => c.emails))) {
   }
 }
 
+// Never queue a second email for a stage that was already emailed or is already waiting.
+const pending = new Set(((await sb('/rest/v1/notifications?sent_at=is.null&select=notion_id,stage_index')) || []).map(r => `${r.notion_id}:${r.stage_index}`));
+for (let i = queue.length - 1; i >= 0; i--) {
+  if (pending.has(`${queue[i].notion_id}:${queue[i].stage_index}`) || await alreadyEmailed(queue[i].notion_id, queue[i].stage_index)) queue.splice(i, 1);
+}
 if (queue.length) await sb('/rest/v1/notifications', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(queue) });
 const sent = await sendDueEmails(new Map(couples.map(c => [c.notion_id, c])));
 const welcomed = await sendWelcomes(couples);
 
 // Counts only: GitHub Actions logs can be public, so never log names or emails.
-console.log(`Synced ${couples.length} couple(s); ${skipped} skipped (no Client Email); ${badEmails} invalid email(s) ignored; ${paused} paused; ${created} new sign-in email(s); ${failed} sign-in setup failure(s); ${queue.length} update email(s) queued; ${sent} sent; ${welcomed} welcome email(s) sent.`);
+console.log(`Synced ${couples.length} couple(s); ${skipped} skipped (no Client Email); ${badEmails} invalid email(s) ignored; ${paused} paused; ${created} new sign-in email(s); ${failed} sign-in setup failure(s); ${queue.length} update email(s) queued; ${sent} sent; ${welcomed} welcome email(s) sent; ${emailFailed} email send failure(s).`);
 // A sign-in setup failure fails the run (GitHub emails info@), after everyone else has synced.
 // Typo'd emails only show in the log count; failing on them would email info@ every 10 minutes.
 if (failed) process.exitCode = 1;
@@ -249,9 +256,15 @@ async function sendWelcomes(list) {
   let count = 0;
   for (const [c, email] of todo) {
     const e = welcomeEmail(c);
-    await mail.sendMail({ from: `"JPM Weddings" <${GMAIL_USER}>`, to: email, replyTo: GMAIL_USER, subject: e.subject, text: e.text, html: e.html });
-    await sb('/rest/v1/notifications', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify([{ notion_id: c.notion_id, stage_index: WELCOME, sent_at: new Date().toISOString(), result: 'welcome:' + email }]) });
-    count++;
+    // Log the welcome BEFORE sending so a crash or failed save can never cause a second welcome.
+    const row = await sb('/rest/v1/notifications', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify([{ notion_id: c.notion_id, stage_index: WELCOME, sent_at: new Date().toISOString(), result: 'welcome:' + email }]) });
+    try {
+      await mail.sendMail({ from: `"JPM Weddings" <${GMAIL_USER}>`, to: email, replyTo: GMAIL_USER, subject: e.subject, text: e.text, html: e.html });
+      count++;
+    } catch (err) {
+      emailFailed++;
+      if (row?.[0]?.id) await sb(`/rest/v1/notifications?id=eq.${row[0].id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ result: 'welcome-failed:' + email }) });
+    }
   }
   return count;
 }
@@ -276,6 +289,16 @@ ${p(hi)}${p('We made something special for you: your own Client Dashboard, where
   return { subject, text, html };
 }
 
+// ---------- duplicate-email guards (Justin, 2026-10-03: never send a client the same email twice) ----------
+// 1) GitHub Actions runs never overlap (concurrency group in sync.yml).
+// 2) Every email row is CLAIMED in the database BEFORE it is sent, so a crash or a failed save after sending can never cause a resend.
+// 3) A couple never gets a second email for a stage that was already emailed (for example a film sent back for notes and reviewed again).
+// Stages 3, 4 and 5 changed meaning on 2026-10-02 (review now comes before color and sound), so only emails sent after that count for them.
+async function alreadyEmailed(notionId, idx) {
+  const rows = (await sb(`/rest/v1/notifications?notion_id=eq.${encodeURIComponent(notionId)}&stage_index=eq.${idx}&result=in.(sent,sending)&select=created_at`)) || [];
+  return rows.some(r => !(idx >= 3 && idx <= 5) || new Date(r.created_at) >= new Date(REORDER_AT));
+}
+
 // ---------- status update emails ----------
 // One of the two client emails that go out without Justin's review (with the welcome email): fixed template, pre-approved 2026-09-23.
 async function sendDueEmails(byNotion) {
@@ -298,9 +321,15 @@ async function sendDueEmails(byNotion) {
     const c = byNotion.get(n.notion_id);
     if (!c || !c.emails.length) { await mark(n.id, 'skipped: no access'); continue; }
     if (c.stage_index < n.stage_index) { await mark(n.id, 'skipped: moved back'); continue; }
+    if (await alreadyEmailed(n.notion_id, n.stage_index)) { await mark(n.id, 'skipped: already emailed this stage'); continue; }
+    // Claim the row first (only one run can win), then send.
+    const claimed = await sb(`/rest/v1/notifications?id=eq.${n.id}&sent_at=is.null`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ sent_at: new Date().toISOString(), result: 'sending' }) });
+    if (!claimed || !claimed.length) continue;
     const e = statusEmail(c);
-    await mail.sendMail({ from: `"JPM Weddings" <${GMAIL_USER}>`, to: c.emails.join(', '), replyTo: GMAIL_USER, subject: e.subject, text: e.text, html: e.html });
-    await mark(n.id, 'sent'); count++;
+    try {
+      await mail.sendMail({ from: `"JPM Weddings" <${GMAIL_USER}>`, to: c.emails.join(', '), replyTo: GMAIL_USER, subject: e.subject, text: e.text, html: e.html });
+      await mark(n.id, 'sent'); count++;
+    } catch (err) { await mark(n.id, 'send failed: ' + String(err.message || err).slice(0, 120)); emailFailed++; }
   }
   return count;
 }
