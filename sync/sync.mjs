@@ -103,11 +103,12 @@ async function buildCouple(w) {
   else stage = weddingDate ? 0 : -1;
 
   const d = k => p.date(B[k]);
-  const delivered = d('Episode Delivered') || p.date(W['Delivered Date']);
+  // Post Stage Delivered counts as delivered even if the Weddings Stage and Delivered Date were not filled in (Justin, 2026-10-03).
+  const delivered = d('Episode Delivered') || p.date(W['Delivered Date']) || (stage === 6 ? d('Stage Since') : null);
   // stageDates[k] = when client stage k was completed: edit started ends crafting, sent to Matt ends editing, approved ends review, color back ends color (no date for sound).
   const stageDates = [null, d('Edit Started'), d('Sent to Matt'), d('Approved Date'), d('Color Back'), null, stage === 6 ? delivered : null];
 
-  const filmLink = (d('Episode Delivered') || wStage === 'Delivered' || wStage === 'Complete') ? httpsOnly(p.url(W['Client Film Link'])) : null;
+  const filmLink = (d('Episode Delivered') || stage === 6 || wStage === 'Delivered' || wStage === 'Complete') ? httpsOnly(p.url(W['Client Film Link'])) : null;
   // Ceremony, raw footage and reels live in Dropbox Server Backup (VidFlow credits cost), each with its own link field.
   // Justin, 2026-09-23: these snippets show the moment their link is in Notion, at any stage, to build excitement.
   const rawLink = httpsOnly(p.url(W['Raw Footage Link']));
