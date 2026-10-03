@@ -222,7 +222,9 @@ const sent = await sendDueEmails(new Map(couples.map(c => [c.notion_id, c])));
 const welcomed = await sendWelcomes(couples);
 
 // Counts only: GitHub Actions logs can be public, so never log names or emails.
-console.log(`Synced ${couples.length} couple(s); ${skipped} skipped (no Client Email); ${badEmails} invalid email(s) ignored; ${paused} paused; ${created} new sign-in email(s); ${failed} sign-in setup failure(s); ${queue.length} update email(s) queued; ${sent} sent; ${welcomed} welcome email(s) sent; ${emailFailed} email send failure(s).`);
+const emailCounts = new Map(); couples.forEach(c => c.emails.forEach(e => emailCounts.set(e, (emailCounts.get(e) || 0) + 1)));
+const multiWedding = [...emailCounts.values()].filter(n => n > 1).length;   // planners: one email on 2+ weddings (they get the Your weddings menu)
+console.log(`Synced ${couples.length} couple(s); ${multiWedding} email(s) on 2+ weddings; ${skipped} skipped (no Client Email); ${badEmails} invalid email(s) ignored; ${paused} paused; ${created} new sign-in email(s); ${failed} sign-in setup failure(s); ${queue.length} update email(s) queued; ${sent} sent; ${welcomed} welcome email(s) sent; ${emailFailed} email send failure(s).`);
 // A sign-in setup failure fails the run (GitHub emails info@), after everyone else has synced.
 // Typo'd emails only show in the log count; failing on them would email info@ every 10 minutes.
 if (failed) process.exitCode = 1;
