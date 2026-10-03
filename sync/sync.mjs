@@ -7,7 +7,7 @@ const { NOTION_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GMAIL_USER, GMAIL
 const SITE = 'https://films.jpmweddings.com';
 const EMAIL_DELAY_MIN = 10;
 const WELCOME = -100;   // notifications.stage_index marker for sent welcome emails
-const REORDER_AT = '2026-10-02T05:19:00Z';   // stages 3 to 5 changed meaning here; see the duplicate-email guards
+const REORDER_AT = '2026-10-03T15:52:00Z';   // the new stage order went live here (stages 3 to 5 changed meaning); see the duplicate-email guards
 let emailFailed = 0;
 let transport;          // Gmail sender, created on first use
 if (!NOTION_TOKEN || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -293,10 +293,12 @@ ${p(hi)}${p('We made something special for you: your own Client Dashboard, where
 // 1) GitHub Actions runs never overlap (concurrency group in sync.yml).
 // 2) Every email row is CLAIMED in the database BEFORE it is sent, so a crash or a failed save after sending can never cause a resend.
 // 3) A couple never gets a second email for a stage that was already emailed (for example a film sent back for notes and reviewed again).
-// Stages 3, 4 and 5 changed meaning on 2026-10-02 (review now comes before color and sound), so only emails sent after that count for them.
+// Stages 3, 4 and 5 changed meaning when the new order went live (review now comes before color and sound), so older rows are translated.
 async function alreadyEmailed(notionId, idx) {
-  const rows = (await sb(`/rest/v1/notifications?notion_id=eq.${encodeURIComponent(notionId)}&stage_index=eq.${idx}&result=in.(sent,sending)&select=created_at`)) || [];
-  return rows.some(r => !(idx >= 3 && idx <= 5) || new Date(r.created_at) >= new Date(REORDER_AT));
+  const rows = (await sb(`/rest/v1/notifications?notion_id=eq.${encodeURIComponent(notionId)}&result=in.(sent,sending)&stage_index=gte.0&select=stage_index,created_at`)) || [];
+  // Rows written before the new stage order went live (REORDER_AT) use the OLD numbers: 3 color, 4 sound, 5 review. Translate them.
+  const norm = r => (new Date(r.created_at) < new Date(REORDER_AT) ? ({ 3: 4, 4: 5, 5: 3 }[r.stage_index] ?? r.stage_index) : r.stage_index);
+  return rows.some(r => norm(r) === idx);
 }
 
 // ---------- status update emails ----------
