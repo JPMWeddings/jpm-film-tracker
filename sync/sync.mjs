@@ -7,6 +7,7 @@ const { NOTION_TOKEN, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GMAIL_USER, GMAIL
 const SITE = 'https://films.jpmweddings.com';
 const EMAIL_DELAY_MIN = 10;
 const WELCOME = -100;   // notifications.stage_index marker for sent welcome emails
+const DROP = -200;      // notifications.stage_index marker for new-snippet emails (see sendMediaDrops)
 const REORDER_AT = '2026-10-03T15:52:00Z';   // the new stage order went live here (stages 3 to 5 changed meaning); see the duplicate-email guards
 let emailFailed = 0;
 let transport;          // Gmail sender, created on first use
@@ -142,7 +143,8 @@ async function buildCouple(w) {
   const due = p.formulaDate(W['Delivery Due']);
   const lastEdited = [b?.last_edited_time, w.last_edited_time].filter(Boolean).sort().pop();
 
-  return {
+  const mediaCount = typeof W['Media Count']?.number === 'number' ? W['Media Count'].number : null;
+  const couple = {
     notion_id: w.id,
     emails,
     names: p.title(W['Couple']).replace(/\s*\+\s*/g, ' & '),
@@ -158,6 +160,9 @@ async function buildCouple(w) {
     last_update: ctDate(lastEdited),
     synced_at: new Date().toISOString(),
   };
+  // Not a Supabase column: kept off the upsert (non-enumerable) and only read by sendMediaDrops.
+  Object.defineProperty(couple, 'mediaCount', { value: mediaCount, enumerable: false });
+  return couple;
 }
 
 // ---------- main ----------
@@ -213,18 +218,19 @@ for (const email of new Set(couples.flatMap(c => c.emails))) {
 }
 
 // Never queue a second email for a stage that was already emailed or is already waiting.
-const pending = new Set(((await sb('/rest/v1/notifications?sent_at=is.null&select=notion_id,stage_index')) || []).map(r => `${r.notion_id}:${r.stage_index}`));
+const pending = new Set(((await sb('/rest/v1/notifications?sent_at=is.null&stage_index=gte.0&select=notion_id,stage_index')) || []).map(r => `${r.notion_id}:${r.stage_index}`));
 for (let i = queue.length - 1; i >= 0; i--) {
   if (pending.has(`${queue[i].notion_id}:${queue[i].stage_index}`) || await alreadyEmailed(queue[i].notion_id, queue[i].stage_index)) queue.splice(i, 1);
 }
 if (queue.length) await sb('/rest/v1/notifications', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(queue) });
 const sent = await sendDueEmails(new Map(couples.map(c => [c.notion_id, c])));
 const welcomed = await sendWelcomes(couples);
+const dropped = await sendMediaDrops(couples);
 
 // Counts only: GitHub Actions logs can be public, so never log names or emails.
 const emailCounts = new Map(); couples.forEach(c => c.emails.forEach(e => emailCounts.set(e, (emailCounts.get(e) || 0) + 1)));
 const multiWedding = [...emailCounts.values()].filter(n => n > 1).length;   // planners: one email on 2+ weddings (they get the Your weddings menu)
-console.log(`Synced ${couples.length} couple(s); ${multiWedding} email(s) on 2+ weddings; ${skipped} skipped (no Client Email); ${badEmails} invalid email(s) ignored; ${paused} paused; ${created} new sign-in email(s); ${failed} sign-in setup failure(s); ${queue.length} update email(s) queued; ${sent} sent; ${welcomed} welcome email(s) sent; ${emailFailed} email send failure(s).`);
+console.log(`Synced ${couples.length} couple(s); ${multiWedding} email(s) on 2+ weddings; ${skipped} skipped (no Client Email); ${badEmails} invalid email(s) ignored; ${paused} paused; ${created} new sign-in email(s); ${failed} sign-in setup failure(s); ${queue.length} update email(s) queued; ${sent} sent; ${welcomed} welcome email(s) sent; ${dropped} snippet email(s) sent; ${emailFailed} email send failure(s).`);
 // A sign-in setup failure fails the run (GitHub emails info@), after everyone else has synced.
 // Typo'd emails only show in the log count; failing on them would email info@ every 10 minutes.
 if (failed) process.exitCode = 1;
@@ -291,6 +297,82 @@ ${p(hi)}${p('We made something special for you: your own Client Dashboard, where
   return { subject, text, html };
 }
 
+// ---------- new snippet emails ----------
+// Approved by Justin 2026-10-04 as the third automatic client email (fixed template): when a new ceremony, raw footage or reel
+// lands in Server Backup, the couple gets a fun "new snippet" note that never says which kind it is.
+// How it knows: the Weddings number property "Media Count" (files in Server Backup Ceremony + Raw Footage + Reels) is kept up to
+// date by Claude (update the tracker, nightly Dropbox Watcher). Only a RISE in that number sends an email.
+// Logged as notifications rows with stage_index -200 and result media-<state>:<count>.
+// First time a couple's count is seen it is only recorded (baseline), so files that already exist never trigger an email.
+// Same duplicate guards as the other emails: pending row waits 10 minutes, claimed before sending, one email per couple per run.
+async function sendMediaDrops(list) {
+  const rows = (await sb(`/rest/v1/notifications?stage_index=eq.${DROP}&select=id,notion_id,result,created_at,sent_at&order=id.asc`)) || [];
+  const acked = new Map(), pending = new Map();   // notion_id -> { id, n } (latest recorded count) / (waiting email)
+  for (const r of rows) {
+    const m = /^media-(baseline|pending|sending|sent|failed|superseded):(\d+)/.exec(r.result || '');
+    if (!m) continue;
+    if (m[1] === 'pending') pending.set(r.notion_id, { id: r.id, n: +m[2], created_at: r.created_at });
+    else if (m[1] === 'superseded') { if (pending.get(r.notion_id)?.id === r.id) pending.delete(r.notion_id); }
+    else { acked.set(r.notion_id, { id: r.id, n: +m[2] }); if (pending.get(r.notion_id)?.id === r.id) pending.delete(r.notion_id); }
+  }
+  const log = (id, result, extra = {}) => sb(`/rest/v1/notifications?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ result, ...extra }) });
+  const add = (notion_id, result, sent) => sb('/rest/v1/notifications', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify([{ notion_id, stage_index: DROP, result, ...(sent ? { sent_at: new Date().toISOString() } : {}) }]) });
+
+  for (const c of list) {
+    const cur = c.mediaCount, a = acked.get(c.notion_id), pe = pending.get(c.notion_id);
+    if (cur === null) continue;
+    if (!a && !pe) { await add(c.notion_id, `media-baseline:${cur}`, true); continue; }   // first sight: record only, never email
+    const known = a ? a.n : 0;
+    if (cur <= known) {
+      if (pe) { await log(pe.id, `media-superseded:${pe.n}`); pending.delete(c.notion_id); }
+      if (cur < known) await add(c.notion_id, `media-baseline:${cur}`, true);   // a file was removed; new floor
+      continue;
+    }
+    if (pe && pe.n === cur) continue;
+    if (pe) await log(pe.id, `media-superseded:${pe.n}`);
+    const row = await add(c.notion_id, `media-pending:${cur}`, false);
+    pending.set(c.notion_id, { id: row?.[0]?.id, n: cur, created_at: new Date().toISOString() });
+  }
+
+  const cutoff = Date.now() - EMAIL_DELAY_MIN * 60000;
+  const byId = new Map(list.map(c => [c.notion_id, c]));
+  const due = [...pending.entries()].filter(([nid, pe]) => pe.id && (new Date(pe.created_at).getTime() < cutoff || /^TEST\s/i.test(byId.get(nid)?.names || '')));
+  if (!due.length) return 0;
+  if (!GMAIL_USER || !GMAIL_APP_PASSWORD) { console.warn('Snippet emails waiting, but GMAIL_USER / GMAIL_APP_PASSWORD secrets are not set.'); return 0; }
+  const mail = await mailer();
+  let count = 0;
+  for (const [nid, pe] of due) {
+    const c = byId.get(nid);
+    if (!c || !c.emails.length || c.mediaCount !== pe.n) continue;
+    const claimed = await sb(`/rest/v1/notifications?id=eq.${pe.id}&sent_at=is.null`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ sent_at: new Date().toISOString(), result: `media-sending:${pe.n}` }) });
+    if (!claimed || !claimed.length) continue;
+    const e = snippetEmail(c);
+    try {
+      await mail.sendMail({ from: `"JPM Weddings" <${GMAIL_USER}>`, to: c.emails.join(', '), replyTo: GMAIL_USER, subject: e.subject, text: e.text, html: e.html });
+      await log(pe.id, `media-sent:${pe.n}`); count++;
+    } catch (err) { await log(pe.id, `media-failed:${pe.n}`); emailFailed++; }
+  }
+  return count;
+}
+
+function snippetEmail(c) {
+  const subject = 'A new snippet is available!';
+  const hi = `Hi ${c.names.replace(/^TEST\s+/i, '')},`;
+  const text = `${hi}\n\nGuess what? A fresh new snippet from your wedding just landed in your Client Dashboard, and we could not keep it to ourselves.\n\nGrab your favorite person, go take a peek, and press play.\n\nPeek at your Client Dashboard: ${SITE}\n\nJustin and the JPM team`;
+  const html = `<div style="background:#08090b;padding:40px 16px;font-family:Lato,Helvetica,Arial,sans-serif;color:#f3f4f6">
+<div style="max-width:480px;margin:0 auto;background:#111317;border:1px solid #252a33;border-radius:16px;padding:32px">
+<p style="margin:0 0 6px;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#4f86f2;font-weight:bold">Fresh from the edit bay</p>
+<h1 style="margin:0 0 16px;font-family:Georgia,serif;font-weight:normal;font-size:28px;line-height:1.2;color:#f3f4f6">A new snippet is available!</h1>
+<p style="margin:0 0 12px;color:#c9ced6;line-height:1.6">${hi}</p>
+<p style="margin:0 0 12px;color:#c9ced6;line-height:1.6">Guess what? A fresh new snippet from your wedding just landed in your Client Dashboard, and we could not keep it to ourselves.</p>
+<p style="margin:0 0 24px;color:#c9ced6;line-height:1.6">Grab your favorite person, go take a peek, and press play.</p>
+<a href="${SITE}" style="display:inline-block;background:#2f6bea;color:#ffffff;text-decoration:none;font-weight:bold;padding:14px 22px;border-radius:10px">Peek at my Client Dashboard</a>
+<p style="margin:24px 0 0;color:#c9ced6;line-height:1.6">Justin and the JPM team</p>
+<p style="margin:16px 0 0;font-size:12px;color:#5d6571;line-height:1.6">Questions? Just reply to this email.</p>
+</div></div>`;
+  return { subject, text, html };
+}
+
 // ---------- duplicate-email guards (Justin, 2026-10-03: never send a client the same email twice) ----------
 // 1) GitHub Actions runs never overlap (concurrency group in sync.yml).
 // 2) Every email row is CLAIMED in the database BEFORE it is sent, so a crash or a failed save after sending can never cause a resend.
@@ -309,7 +391,7 @@ async function sendDueEmails(byNotion) {
   // TEST couples (live demos, email goes to info@) skip the buffer so the email lands on camera.
   const cutoff = Date.now() - EMAIL_DELAY_MIN * 60000;
   const isTest = n => /^TEST\s/i.test(byNotion.get(n.notion_id)?.names || '');
-  const due = (await sb(`/rest/v1/notifications?sent_at=is.null&select=*&order=created_at.asc`) || [])
+  const due = (await sb(`/rest/v1/notifications?sent_at=is.null&stage_index=gte.0&select=*&order=created_at.asc`) || [])
     .filter(n => new Date(n.created_at).getTime() < cutoff || isTest(n));
   if (!due.length) return 0;
   if (!GMAIL_USER || !GMAIL_APP_PASSWORD) { console.warn('Emails waiting, but GMAIL_USER / GMAIL_APP_PASSWORD secrets are not set.'); return 0; }
