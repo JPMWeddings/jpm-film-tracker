@@ -147,7 +147,8 @@ async function buildCouple(w) {
   const couple = {
     notion_id: w.id,
     emails,
-    names: p.title(W['Couple']).replace(/\s*\+\s*/g, ' & '),
+    // Couple titles use the project name format (2025.11.01_Alexis + Michaela); couples only ever see the names (Justin, 2026-10-29).
+    names: p.title(W['Couple']).replace(/^\s*\d{4}[.\-]\d{1,2}[.\-]\d{1,2}[\s_\-]*/, '').trim().replace(/\s*\+\s*/g, ' & '),
     collection: pkg,
     wedding_date: weddingDate,
     venue: p.text(W['Location']) || null,
