@@ -149,7 +149,8 @@ h2{font-family:var(--display);font-weight:500;font-size:clamp(28px,4vw,38px);lin
 /* Contact + footer */
 .help{display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between}
 .help p{margin:0;color:#c9ced6;max-width:560px}
-.addr{display:flex;gap:8px;align-items:center;background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:8px 8px 8px 14px;font-family:var(--mono);font-size:14px}
+.addr{display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:var(--raise);border:1px solid var(--line);border-radius:10px;padding:8px 8px 8px 14px;font-family:var(--mono);font-size:14px}
+.addr .who{font-family:var(--body);font-weight:700;color:var(--text)}
 .addr span{user-select:all}
 .copy{font-size:13px;font-weight:700;color:#fff;background:var(--play);border:0;border-radius:8px;padding:7px 12px;cursor:pointer}
 footer{border-top:1px solid var(--line);padding-block:28px 40px;color:var(--faint);font-size:13px;display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between;align-items:center}
@@ -251,8 +252,8 @@ footer em{font-family:var(--display);font-size:18px;color:var(--muted)}
 
     <section>
       <div class="card help">
-        <p><strong>Questions?</strong> Grecel, your Client Journey Manager, is a message away.</p>
-        <div class="addr"><span id="mail"></span><button class="copy" id="copyBtn" type="button">Copy</button></div>
+        <p><strong>Questions?</strong> JPM Team is a message away.</p>
+        <div class="addr"><span class="who">JPM Team</span><span id="mail"></span><button class="copy" id="copyBtn" type="button">Copy</button></div>
       </div>
     </section>
   </main>
@@ -273,7 +274,7 @@ footer em{font-family:var(--display);font-size:18px;color:var(--muted)}
 const C = window.JPM_CONFIG || {};
 const DEMO = !C.supabaseUrl || C.supabaseUrl.indexOf('YOUR') === 0 || location.hash === '#demo';
 const sb = (!DEMO && window.supabase) ? window.supabase.createClient(C.supabaseUrl, C.supabaseAnonKey) : null;
-const CONTACT = C.contactEmail || 'Grecel@jpmweddings.com';
+const CONTACT = C.contactEmail || 'info@jpmweddings.com';
 const $ = id => document.getElementById(id);
 
 const STAGES = [
