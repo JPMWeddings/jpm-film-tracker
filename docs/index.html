@@ -251,7 +251,7 @@ footer em{font-family:var(--display);font-size:18px;color:var(--muted)}
 
     <section>
       <div class="card help">
-        <p><strong>Questions?</strong> Grecel, your Client Journey Manager, is a message away.</p>
+        <p><strong>Questions?</strong> JPM Team is a message away.</p>
         <div class="addr"><span id="mail"></span><button class="copy" id="copyBtn" type="button">Copy</button></div>
       </div>
     </section>
@@ -273,7 +273,7 @@ footer em{font-family:var(--display);font-size:18px;color:var(--muted)}
 const C = window.JPM_CONFIG || {};
 const DEMO = !C.supabaseUrl || C.supabaseUrl.indexOf('YOUR') === 0 || location.hash === '#demo';
 const sb = (!DEMO && window.supabase) ? window.supabase.createClient(C.supabaseUrl, C.supabaseAnonKey) : null;
-const CONTACT = C.contactEmail || 'Grecel@jpmweddings.com';
+const CONTACT = C.contactEmail || 'JPM Team';
 const $ = id => document.getElementById(id);
 
 const STAGES = [

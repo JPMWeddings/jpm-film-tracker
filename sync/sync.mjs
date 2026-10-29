@@ -281,7 +281,7 @@ async function sendWelcomes(list) {
 function welcomeEmail(c) {
   const hi = `Hi ${c.names.replace(/^TEST\s+/i, '').replace(/ & /g, ' and ')},`;
   const subject = 'Your JPM Client Dashboard is live';
-  const text = `${hi}\n\nWe made something special for you: your own Client Dashboard, where you can watch your wedding film move from footage to premiere night.\n\nOpen your Client Dashboard: ${SITE}\nEnter this email address and we will send you a one-time sign-in link. No password, no hassle. You can even add your favorite photo to make it yours.\n\nEvery time your film moves to the next stage, you will get a short update email from us.\n\nWe cannot wait for you to see it!\nGrecel\nClient Journey Manager, JPM Weddings`;
+  const text = `${hi}\n\nWe made something special for you: your own Client Dashboard, where you can watch your wedding film move from footage to premiere night.\n\nOpen your Client Dashboard: ${SITE}\nEnter this email address and we will send you a one-time sign-in link. No password, no hassle. You can even add your favorite photo to make it yours.\n\nEvery time your film moves to the next stage, you will get a short update email from us.\n\nWe cannot wait for you to see it!\nJPM Team`;
   const p = t => `<p style="margin:0 0 12px;color:#c9ced6;line-height:1.6">${t}</p>`;
   const html = `<div style="background:#08090b;padding:40px 16px;font-family:Lato,Helvetica,Arial,sans-serif;color:#f3f4f6">
 <div style="max-width:480px;margin:0 auto;background:#111317;border:1px solid #252a33;border-radius:16px;padding:32px">
@@ -292,7 +292,7 @@ ${p(hi)}${p('We made something special for you: your own Client Dashboard, where
 <a href="${SITE}" style="display:inline-block;background:#2f6bea;color:#ffffff;text-decoration:none;font-weight:bold;padding:14px 22px;border-radius:10px">Open my Client Dashboard</a>
 <p style="margin:24px 0 12px;color:#c9ced6;line-height:1.6">Every time your film moves to the next stage, you will get a short update email from us.</p>
 <p style="margin:0 0 4px;color:#c9ced6;line-height:1.6">We cannot wait for you to see it!</p>
-<p style="margin:0;color:#c9ced6;line-height:1.6">Grecel<br>Client Journey Manager, JPM Weddings</p>
+<p style="margin:0;color:#c9ced6;line-height:1.6">JPM Team</p>
 <p style="margin:16px 0 0;font-size:12px;color:#5d6571;line-height:1.6">Questions? Just reply to this email.</p>
 </div></div>`;
   return { subject, text, html };
